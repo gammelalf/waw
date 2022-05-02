@@ -93,7 +93,7 @@ impl Component for Screen {
         let windows = self.windows.iter().map(|props| html!{<Window ..props.clone()/>});
         return html!{
             <>
-                {format!("I'm {} by {} pixel", self.width, self.height)}
+                {format!("Your screen is {} by {} pixel", self.width, self.height)}
                 {for windows}
             </>
         };

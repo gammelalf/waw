@@ -11,6 +11,7 @@
 				height: 100vh;
 			}
 		</style>
+		<link rel="stylesheet" href="/static/main.css">
 	</head>
 	<body>
 		<script>
@@ -18,6 +19,10 @@
 				const {default: init, Screen} = await import("/pkg/waw.js");
 				await init();
 				window.screen = new Screen(document.body);
+
+				const windowId = await screen.newWindow();
+				const div = screen.getWindow(windowId);
+				div.innerHTML = "I'm a window created from javascript!";
 			})()
 		</script>
 	</body>

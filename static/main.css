@@ -1,0 +1,65 @@
+.waw-window {
+    --x: 50px;
+    --y: 50px;
+    --width: 100px;
+    --height: 100px;
+    position: fixed;
+    left: var(--x);
+    top: var(--y);
+    width: var(--width);
+    height: var(--height);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+}
+
+.waw-n, .waw-nw, .waw-w, .waw-sw, .waw-s, .waw-se, .waw-e, .waw-ne {
+    --delta: 5px;
+    position: absolute;
+}
+.waw-n, .waw-s {
+    height: calc(2 * var(--delta));
+    left: 0;
+    right: 0;
+    cursor: ns-resize;
+}
+.waw-n {
+    top: calc(-1 * var(--delta));
+}
+.waw-s {
+    bottom: calc(-1 * var(--delta));
+}
+.waw-w, .waw-e {
+    width: calc(2 * var(--delta));
+    top: 0;
+    bottom: 0;
+    cursor: ew-resize;
+}
+.waw-w {
+    left: calc(-1 * var(--delta));
+}
+.waw-e {
+    right: calc(-1 * var(--delta));
+}
+.waw-nw, .waw-ne, .waw-sw, .waw-se {
+    width: calc(3 * var(--delta));
+    height: calc(3 * var(--delta));
+}
+.waw-nw {
+    top: calc(-1 * var(--delta));
+    left: calc(-1 * var(--delta));
+    cursor: nwse-resize;
+}
+.waw-ne {
+    top: calc(-1 * var(--delta));
+    right: calc(-1 * var(--delta));
+    cursor: nesw-resize;
+}
+.waw-sw {
+    bottom: calc(-1 * var(--delta));
+    left: calc(-1 * var(--delta));
+    cursor: nesw-resize;
+}
+.waw-se {
+    bottom: calc(-1 * var(--delta));
+    right: calc(-1 * var(--delta));
+    cursor: nwse-resize;
+}
