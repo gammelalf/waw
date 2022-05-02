@@ -11,6 +11,24 @@
     box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
 }
 
+.waw-title, .waw-body {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
+.waw-title {
+    background-color: blue;
+    top: 0;
+    height: 1em;
+    cursor: move;
+}
+
+.waw-body {
+    top: 1em;
+    bottom: 0;
+}
+
 .waw-n, .waw-nw, .waw-w, .waw-sw, .waw-s, .waw-se, .waw-e, .waw-ne {
     --delta: 5px;
     position: absolute;

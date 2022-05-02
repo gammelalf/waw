@@ -32,6 +32,7 @@ pub enum WindowMsg {
 }
 #[derive(Copy, Clone)]
 pub enum AnchorPosition {
+    Title,
     N, S, W, E,
     NW, NE, SW, SE,
 }
@@ -50,10 +51,14 @@ impl Component for Window {
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+        use AnchorPosition::*;
         match msg {
+            WindowMsg::Resize(Title, dx, dy) => {
+                self.x += dx;
+                self.y += dy;
+                true
+            }
             WindowMsg::Resize(pos, dx, dy) => {
-                use AnchorPosition::*;
-
                 // Change xy to the corner which doesn't move
                 if matches!(pos, NW | N | NE) { self.y += self.height; }
                 if matches!(pos, NW | W | SW) { self.x += self.width; }
@@ -73,6 +78,7 @@ impl Component for Window {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        use AnchorPosition::*;
         let on_move = |pos| ctx.link().callback(move |(dx, dy)|
             WindowMsg::Resize(pos, dx, dy)
         );
@@ -88,14 +94,15 @@ impl Component for Window {
                     {format!("Hello Window {}", ctx.props().id.to_string())}
                 </div>
 
-                <Anchor class={"waw-n"} on_move={on_move(AnchorPosition::N)}/>
-                <Anchor class={"waw-s"} on_move={on_move(AnchorPosition::S)}/>
-                <Anchor class={"waw-w"} on_move={on_move(AnchorPosition::W)}/>
-                <Anchor class={"waw-e"} on_move={on_move(AnchorPosition::E)}/>
-                <Anchor class={"waw-nw"} on_move={on_move(AnchorPosition::NW)}/>
-                <Anchor class={"waw-ne"} on_move={on_move(AnchorPosition::NE)}/>
-                <Anchor class={"waw-sw"} on_move={on_move(AnchorPosition::SW)}/>
-                <Anchor class={"waw-se"} on_move={on_move(AnchorPosition::SE)}/>
+                <Anchor class={"waw-title"} on_move={on_move(Title)}/>
+                <Anchor class={"waw-n"} on_move={on_move(N)}/>
+                <Anchor class={"waw-s"} on_move={on_move(S)}/>
+                <Anchor class={"waw-w"} on_move={on_move(W)}/>
+                <Anchor class={"waw-e"} on_move={on_move(E)}/>
+                <Anchor class={"waw-nw"} on_move={on_move(NW)}/>
+                <Anchor class={"waw-ne"} on_move={on_move(NE)}/>
+                <Anchor class={"waw-sw"} on_move={on_move(SW)}/>
+                <Anchor class={"waw-se"} on_move={on_move(SE)}/>
             </div>
         };
     }
