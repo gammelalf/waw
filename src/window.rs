@@ -20,6 +20,10 @@ impl From<u32> for WindowId {
 #[derive(Copy, Clone, Properties, PartialEq)]
 pub struct WindowProps {
     pub id: WindowId,
+    #[prop_or(0)]
+    pub min_width: i32,
+    #[prop_or(0)]
+    pub min_height: i32,
 }
 pub struct Window {
     pub x: i32,
@@ -50,7 +54,7 @@ impl Component for Window {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         use AnchorPosition::*;
         match msg {
             WindowMsg::Resize(Title, dx, dy) => {
@@ -68,6 +72,11 @@ impl Component for Window {
                 if matches!(pos, NE | E | SE) { self.width += dx; }
                 if matches!(pos, NW | N | NE) { self.height -= dy; }
                 if matches!(pos, NW | W | SW) { self.width -= dx; }
+
+                // Clamp width and height
+                let props = ctx.props();
+                if self.width < props.min_width { self.width = props.min_width; }
+                if self.height < props.min_height { self.height = props.min_height; }
 
                 // Change xy to the top left corner
                 if matches!(pos, NW | N | NE) { self.y -= self.height; }

@@ -66,7 +66,7 @@ impl Component for Screen {
                 let id = self.next_window_id;
                 self.next_window_id += 1;
 
-                self.windows.push(WindowProps {id: id.into()});
+                self.windows.push(WindowProps {id: id.into(), min_height: 0, min_width: 0});
                 promise.resolve(id);
                 true
             },
