@@ -6,12 +6,12 @@ use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct AnchorProps {
-    pub class: Classes,
-    pub on_begin: Option<Callback<()>>,
-    pub on_move: Option<Callback<(i32, i32)>>,
-    pub on_end: Option<Callback<()>>,
+    #[prop_or_default] pub class: Classes,
+    #[prop_or_default] pub on_begin: Option<Callback<()>>,
+    #[prop_or_default] pub on_move: Option<Callback<(i32, i32)>>,
+    #[prop_or_default] pub on_end: Option<Callback<()>>,
 }
-struct Anchor {
+pub struct Anchor {
     last_x: i32,
     last_y: i32,
     on_down: Callback<MouseEvent>,
@@ -89,7 +89,7 @@ impl Component for Anchor {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         return html!{
-            <div class={ctx.props().class} onmousedown={self.on_down.clone()}/>
+            <div class={ctx.props().class.clone()} onmousedown={self.on_down.clone()}/>
         };
     }
 }

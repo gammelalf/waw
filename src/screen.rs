@@ -1,6 +1,6 @@
 use gloo::events::EventListener;
 use web_sys::HtmlElement;
-use yew::{prelude::*, html};
+use yew::prelude::*;
 
 use crate::promise::PendingPromise;
 use crate::window::{Window, WindowProps};

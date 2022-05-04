@@ -1,8 +1,5 @@
-use wasm_bindgen::JsCast;
-use web_sys::{MouseEvent, Event, DragEvent};
-use gloo::utils::window;
-use gloo::events::EventListener;
-use yew::{prelude::*, html};
+use web_sys::DragEvent;
+use yew::prelude::*;
 use crate::anchor::Anchor;
 
 #[derive(Copy, Clone, PartialEq)]
