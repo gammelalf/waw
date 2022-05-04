@@ -16,20 +16,20 @@ impl From<u32> for WindowId {
 }
 
 #[derive(Copy, Clone, Properties, PartialEq)]
-pub struct WindowProps {
+pub struct FloatingProps {
     pub id: WindowId,
     #[prop_or(0)]
     pub min_width: i32,
     #[prop_or(0)]
     pub min_height: i32,
 }
-pub struct Window {
+pub struct Floating {
     pub x: i32,
     pub y: i32,
     pub width: i32,
     pub height: i32,
 }
-pub enum WindowMsg {
+pub enum FloatingMsg {
     Resize(AnchorPosition, i32, i32)
 }
 #[derive(Copy, Clone)]
@@ -39,12 +39,12 @@ pub enum AnchorPosition {
     NW, NE, SW, SE,
 }
 
-impl Component for Window {
-    type Message = WindowMsg;
-    type Properties = WindowProps;
+impl Component for Floating {
+    type Message = FloatingMsg;
+    type Properties = FloatingProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        Window {
+        Floating {
             x: 50,
             y: 50,
             width: 100,
@@ -55,12 +55,12 @@ impl Component for Window {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         use AnchorPosition::*;
         match msg {
-            WindowMsg::Resize(Title, dx, dy) => {
+            FloatingMsg::Resize(Title, dx, dy) => {
                 self.x += dx;
                 self.y += dy;
                 true
             }
-            WindowMsg::Resize(pos, dx, dy) => {
+            FloatingMsg::Resize(pos, dx, dy) => {
                 // Change xy to the corner which doesn't move
                 if matches!(pos, NW | N | NE) { self.y += self.height; }
                 if matches!(pos, NW | W | SW) { self.x += self.width; }
@@ -87,7 +87,7 @@ impl Component for Window {
     fn view(&self, ctx: &Context<Self>) -> Html {
         use AnchorPosition::*;
         let on_move = |pos| ctx.link().callback(move |(dx, dy)|
-            WindowMsg::Resize(pos, dx, dy)
+            FloatingMsg::Resize(pos, dx, dy)
         );
 
         return html! {
