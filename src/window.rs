@@ -1,5 +1,4 @@
 use gloo::utils::document;
-use once_cell::unsync::Lazy;
 use web_sys::Element;
 use yew::prelude::*;
 use crate::screen::DockPosition;
@@ -7,21 +6,17 @@ use crate::screen::DockPosition;
 pub struct Window {
     pub title: String,
     pub icon: String,
-    pub div: Lazy<Element>,
+    pub div: Element,
     pub dock: Option<DockPosition>,
-    pub hidden: bool,
 }
 impl Window {
     pub fn new(title: String, icon: String) -> Window {
         Window {
             title, icon,
-            div: Lazy::new(||
-                document()
-                    .create_element("div")
-                    .expect("Couldn't create new <div>")
-            ),
+            div: document()
+                .create_element("div")
+                .expect("Couldn't create new <div>"),
             dock: None,
-            hidden: true,
         }
     }
     pub fn inside_dock(&self) -> Html {

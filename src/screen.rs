@@ -29,7 +29,7 @@ pub enum ScreenMsg {
     MoveWindow(usize, Option<DockPosition>),
     ResizeDock(DockPosition, i32, i32),
 }
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum DockPosition {
     Top, Left, Bottom, Right
 }
@@ -106,9 +106,7 @@ impl Component for Screen {
                     docks[Top as usize].pos, docks[Left as usize].pos,
                     docks[Bottom as usize].pos, docks[Right as usize].pos)
                 }>
-                    <div class="waw-taskbar">
-                        {for self.windows.iter().map(|window| window.inside_taskbar())}
-                    </div>
+                    {self.view_taskbar(ctx)}
                     <div class="waw-center-dock"/>
                     {self.view_dock(DockPosition::Left, ctx)}
                     {self.view_dock(DockPosition::Right, ctx)}
@@ -120,6 +118,28 @@ impl Component for Screen {
     }
 }
 impl Screen {
+    fn view_taskbar(&self, _ctx: &Context<Self>) -> Html {
+        let icons = self.windows
+            .iter()
+            .enumerate()
+            .map(|(id, window)| html!{
+                <img
+                    src={window.icon.clone()}
+                    alt={window.title.clone()}
+                    ondragstart={Callback::from(move |event: DragEvent| {
+                        if let Some(dt) = event.data_transfer() {
+                            dt.set_data("application/waw", &id.to_string());
+                        }
+                    })}
+                />
+            });
+        return html!{
+            <div class="waw-taskbar">
+                {for icons}
+            </div>
+        };
+    }
+
     fn view_dock(&self, dock: DockPosition, ctx: &Context<Self>) -> Html {
         use DockPosition::*;
         let dock_class = match dock {
@@ -128,28 +148,52 @@ impl Screen {
             Bottom => "waw-bottom-dock",
             Right  => "waw-right-dock",
         };
-        let flex_class = match dock {
-            Top    => "waw-flex-horizontal",
-            Left   => "waw-flex-vertical",
-            Bottom => "waw-flex-horizontal",
-            Right  => "waw-flex-vertical",
-        };
         let anchor_class = match dock {
             Top    => "waw-s",
             Left   => "waw-e",
             Bottom => "waw-n",
             Right  => "waw-w",
         };
-        let windows = self.windows.iter()
-            .filter(|&window| window.dock == Some(dock) && !window.hidden)
-            .map(|window| window.inside_dock());
+
+        let make_drop_target = Callback::from(|event: DragEvent| {
+            if let Some(dt) = event.data_transfer() {
+                if dt.types().includes(&"application/waw".into(), 0) {
+                    event.prevent_default();
+                }
+            }
+        });
+
+        let windows = self.windows
+            .iter()
+            .enumerate()
+            .filter(|(_, window)|
+                window.dock == Some(dock)
+            )
+            .map(|(id, window)| html!{
+                <key={id}>
+                    {Html::VRef(window.div.clone().into())}
+                </>
+            });
+
         return html!{
-            <div class={dock_class}>
+            <div
+                class={dock_class}
+                ondragenter={make_drop_target.clone()}
+                ondragover={make_drop_target}
+                ondrop={ctx.link().batch_callback(move |event: DragEvent| {
+                    let dt = event.data_transfer()?;
+                    let id = dt.get_data("application/waw").ok()?;
+                    let id: usize = id.parse().ok()?;
+                    event.prevent_default();
+                    Some(ScreenMsg::MoveWindow(id, Some(dock)))
+                })}
+            >
                 <Anchor class={anchor_class}
-                        on_move={ctx.link().callback(move |(dx, dy)|
-                            ScreenMsg::ResizeDock(dock, dx, dy)
-                        )}/>
-                <div class={flex_class}>
+                    on_move={ctx.link().callback(move |(dx, dy)|
+                        ScreenMsg::ResizeDock(dock, dx, dy)
+                    )}
+                />
+                <div class="waw-container">
                     {for windows}
                 </div>
             </div>

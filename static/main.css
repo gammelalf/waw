@@ -29,27 +29,31 @@
 .waw-docks > * {
     position: relative;
 }
-/*.waw-taskbar, .waw-top-dock, .waw-bottom-dock {
+
+.waw-docks .waw-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    overflow: hidden;
     display: flex;
-    flex-direction: row;
 }
-.waw-left-dock, .waw-right-dock {
-    display: flex;
-    flex-direction: column;
-}*/
-.waw-flex-vertical {
-    display: flex;
+
+.waw-left-dock > .waw-container,
+.waw-right-dock > .waw-container {
     flex-direction: column;
 }
-.waw-flex-horizontal {
-    display: flex;
+.waw-top-dock > .waw-container,
+.waw-bottom-dock > .waw-container {
     flex-direction: row;
 }
 
-
+.waw-docks > * {
+    background-color: white;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+}
 .waw-taskbar {background-color: yellow;}
-.waw-left-dock {background-color: blue;}
-.waw-right-dock {background-color: red;}
 
 .waw-window {
     /* overwritten by inline css */
