@@ -1,9 +1,52 @@
+.waw-docks {
+    /* overwritten by inline css */
+    --top: 50px;
+    --left: 50px;
+    --bottom: 50px;
+    --right: 50px;
+
+    display: grid;
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    grid-template-columns: var(--left) 1fr var(--right);
+    grid-template-rows: 5em var(--top) 1fr var(--bottom);
+}
+.waw-taskbar     { grid-row: 1; }
+.waw-top-dock    { grid-row: 2; }
+.waw-left-dock   { grid-row: 3; }
+.waw-center-dock { grid-row: 3; }
+.waw-right-dock  { grid-row: 3; }
+.waw-bottom-dock { grid-row: 4; }
+.waw-docks > *   { grid-column: 1 / 4; }
+.waw-left-dock   { grid-column: 1 / 2; }
+.waw-center-dock { grid-column: 2 / 3; }
+.waw-right-dock  { grid-column: 3 / 4; }
+
+.waw-taskbar, .waw-top-dock, .waw-bottom-dock {
+    display: flex;
+    flex-direction: row;
+}
+.waw-left-dock, .waw-right-dock {
+    display: flex;
+    flex-direction: column;
+}
+
+
+.waw-taskbar {background-color: black;}
+.waw-left-dock {background-color: blue;}
+.waw-right-dock {background-color: red;}
+
 .waw-window {
-    --title-height: 1em;
+    /* overwritten by inline css */
     --x: 50px;
     --y: 50px;
     --width: 100px;
     --height: 100px;
+
+    --title-height: 1em;
     position: fixed;
     left: var(--x);
     top: var(--y);
