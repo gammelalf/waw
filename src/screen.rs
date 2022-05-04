@@ -1,5 +1,4 @@
 use std::cmp::max;
-use std::default::Default;
 use gloo::events::EventListener;
 use web_sys::HtmlElement;
 use yew::prelude::*;
@@ -21,7 +20,8 @@ pub struct Screen {
 
     pub windows: Vec<Window>,
 
-    pub docks: [Dock; 4],
+    pub dock_sizes: [i32; 4],
+    pub center_dock: Option<usize>,
 }
 pub enum ScreenMsg {
     Resize,
@@ -34,9 +34,12 @@ pub enum ScreenMsg {
 pub enum DockPosition {
     Top, Left, Bottom, Right
 }
-#[derive(Default)]
-pub struct Dock {
-    pub pos: i32,
+impl DockPosition {
+    #[inline]
+    pub fn array() -> [DockPosition; 4] {
+        use DockPosition::*;
+        [Top, Left, Bottom, Right]
+    }
 }
 
 impl Component for Screen {
@@ -51,14 +54,15 @@ impl Component for Screen {
         });
 
         let parent: &HtmlElement = &ctx.props().parent;
+        let width = parent.offset_width() as u32;
+        let height = parent.offset_height() as u32;
         Screen {
-            width: parent.offset_width() as u32,
-            height: parent.offset_height() as u32,
-            resize_listener,
+            width, height, resize_listener,
 
             windows: Vec::new(),
 
-            docks: Default::default(),
+            dock_sizes: [height as i32 / 10, width as i32 / 10, height as i32 / 5, width as i32 / 5],
+            center_dock: None,
         }
     }
 
@@ -96,28 +100,36 @@ impl Component for Screen {
                     Bottom => -dy,
                     Right  => -dx,
                 };
-                self.docks[dock as usize].pos = max(0, self.docks[dock as usize].pos + d);
+                self.dock_sizes[dock as usize] = max(0, self.dock_sizes[dock as usize] + d);
                 true
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let mut dock_sizes = self.dock_sizes;
+        let docks: [Html; 4] = DockPosition::array()
+            .map(|dock| {
+                let (visible, html) = self.view_dock(ctx, dock);
+                if !visible {
+                    dock_sizes[dock as usize] = 0;
+                }
+                html
+            });
+
+        let [top, left, bottom, right] = docks;
         return html!{
             <>
                 <div class="waw-docks" style={
-                    use DockPosition::*;
-                    let docks = &self.docks;
                     format!("--top: {}px; --left: {}px; --bottom: {}px; --right: {}px;",
-                    docks[Top as usize].pos, docks[Left as usize].pos,
-                    docks[Bottom as usize].pos, docks[Right as usize].pos)
+                    dock_sizes[0], dock_sizes[1], dock_sizes[2], dock_sizes[3])
                 }>
                     {self.view_taskbar(ctx)}
                     <div class="waw-center-dock"/>
-                    {self.view_dock(DockPosition::Left, ctx)}
-                    {self.view_dock(DockPosition::Right, ctx)}
-                    {self.view_dock(DockPosition::Top, ctx)}
-                    {self.view_dock(DockPosition::Bottom, ctx)}
+                    {left}
+                    {right}
+                    {top}
+                    {bottom}
                 </div>
             </>
         };
@@ -149,7 +161,7 @@ impl Screen {
         };
     }
 
-    fn view_dock(&self, dock: DockPosition, ctx: &Context<Self>) -> Html {
+    fn view_dock(&self, ctx: &Context<Self>, dock: DockPosition) -> (bool, Html) {
         use DockPosition::*;
         let dock_class = match dock {
             Top    => "waw-top-dock",
@@ -172,7 +184,7 @@ impl Screen {
             }
         });
 
-        let windows = self.windows
+        let windows: Vec<Html> = self.windows
             .iter()
             .enumerate()
             .filter(|(_, window)|
@@ -181,13 +193,17 @@ impl Screen {
             .filter(|(_, window)|
                 window.active
             )
+            .filter(|(id, _)|
+                Some(*id) != self.center_dock
+            )
             .map(|(id, window)| html!{
                 <key={id}>
                     {Html::VRef(window.div.clone().into())}
                 </>
-            });
+            })
+            .collect();
 
-        return html!{
+        return (windows.len() > 0, html!{
             <div
                 class={dock_class}
                 ondragenter={make_drop_target.clone()}
@@ -206,9 +222,9 @@ impl Screen {
                     )}
                 />
                 <div class="waw-container">
-                    {for windows}
+                    {for windows.into_iter()}
                 </div>
             </div>
-        };
+        });
     }
 }
