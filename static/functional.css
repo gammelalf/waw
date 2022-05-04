@@ -1,9 +1,9 @@
 .waw-docks {
     /* overwritten by inline css */
-    --top: 50px;
-    --left: 50px;
-    --bottom: 50px;
-    --right: 50px;
+    --top: 0;
+    --left: 0;
+    --bottom: 0;
+    --right: 0;
 
     display: grid;
     position: absolute;
@@ -49,18 +49,12 @@
     flex-direction: row;
 }
 
-.waw-docks > * {
-    background-color: white;
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
-}
-.waw-taskbar {background-color: yellow;}
-
 .waw-window {
     /* overwritten by inline css */
-    --x: 50px;
-    --y: 50px;
-    --width: 100px;
-    --height: 100px;
+    --x: 0;
+    --y: 0;
+    --width: 0;
+    --height: 0;
 
     --title-height: 1em;
     position: fixed;
@@ -70,7 +64,6 @@
     height: var(--height);
     will-change: left, top, width, height;
     min-height: var(--title-height);
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
 }
 
 .waw-title, .waw-body {
@@ -80,7 +73,6 @@
 }
 
 .waw-title {
-    background-color: blue;
     top: 0;
     height: var(--title-height);
     cursor: move;
