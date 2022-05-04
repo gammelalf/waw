@@ -4,6 +4,7 @@ use yew::prelude::*;
 
 pub mod promise;
 pub mod anchor;
+pub mod drop_zone;
 pub mod floating;
 pub mod window;
 pub mod screen;

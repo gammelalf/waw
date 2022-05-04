@@ -39,7 +39,6 @@
     overflow: hidden;
     display: flex;
 }
-
 .waw-left-dock > .waw-container,
 .waw-right-dock > .waw-container {
     flex-direction: column;
@@ -48,6 +47,19 @@
 .waw-bottom-dock > .waw-container {
     flex-direction: row;
 }
+
+.waw-drop-zone {
+    --delta: -3em;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+.waw-top-dock > .waw-drop-zone { bottom: var(--delta); }
+.waw-left-dock > .waw-drop-zone { right: var(--delta); }
+.waw-bottom-dock > .waw-drop-zone { top: var(--delta); }
+.waw-right-dock > .waw-drop-zone { left: var(--delta); }
 
 .waw-window {
     /* overwritten by inline css */

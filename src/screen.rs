@@ -5,6 +5,7 @@ use yew::prelude::*;
 
 use crate::promise::PendingPromise;
 use crate::anchor::Anchor;
+use crate::drop_zone::DropZone;
 use crate::window::{Window, WindowInit};
 
 #[derive(Properties, PartialEq)]
@@ -203,7 +204,8 @@ impl Screen {
             })
             .collect();
 
-        return (windows.len() > 0, html!{
+        let visible = windows.len() > 0;
+        return (visible, html!{
             <div
                 class={dock_class}
                 ondragenter={make_drop_target.clone()}
@@ -216,14 +218,18 @@ impl Screen {
                     Some(ScreenMsg::MoveWindow(id, Some(dock)))
                 })}
             >
-                <Anchor class={anchor_class}
-                    on_move={ctx.link().callback(move |(dx, dy)|
-                        ScreenMsg::ResizeDock(dock, dx, dy)
-                    )}
-                />
-                <div class="waw-container">
-                    {for windows.into_iter()}
-                </div>
+                if visible {
+                    <Anchor class={anchor_class}
+                        on_move={ctx.link().callback(move |(dx, dy)|
+                            ScreenMsg::ResizeDock(dock, dx, dy)
+                        )}
+                    />
+                    <div class="waw-container">
+                        {for windows.into_iter()}
+                    </div>
+                } else {
+                    <DropZone class="waw-drop-zone" over_class="waw-active"/>
+                }
             </div>
         });
     }
