@@ -4,8 +4,9 @@ use web_sys::{Element, HtmlElement};
 use yew::{prelude::*, html};
 use crate::promise::{Promise, PendingPromise};
 
-pub mod window;
 pub mod promise;
+pub mod anchor;
+pub mod window;
 
 use crate::window::{Window, WindowId, WindowProps};
 

@@ -3,6 +3,7 @@ use web_sys::{MouseEvent, Event, DragEvent};
 use gloo::utils::window;
 use gloo::events::EventListener;
 use yew::{prelude::*, html};
+use crate::anchor::Anchor;
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct WindowId(u32);
@@ -113,87 +114,6 @@ impl Component for Window {
                 <Anchor class={"waw-sw"} on_move={on_move(SW)}/>
                 <Anchor class={"waw-se"} on_move={on_move(SE)}/>
             </div>
-        };
-    }
-}
-
-#[derive(Properties, PartialEq)]
-struct AnchorProps {
-    class: &'static str,
-    on_move: Option<Callback<(i32, i32)>>,
-}
-struct Anchor {
-    last_x: i32,
-    last_y: i32,
-    on_down: Callback<MouseEvent>,
-    on_move: Option<EventListener>,
-    on_up: Option<EventListener>,
-}
-pub enum AnchorMsg {
-    Down(i32, i32),
-    Move(i32, i32),
-    Up,
-}
-impl Component for Anchor {
-    type Message = AnchorMsg;
-    type Properties = AnchorProps;
-
-    fn create(ctx: &Context<Self>) -> Self {
-        Anchor {
-            last_x: 0,
-            last_y: 0,
-            on_down: ctx.link().callback(|event: MouseEvent|
-                AnchorMsg::Down(event.client_x(), event.client_y())
-            ),
-            on_move: None,
-            on_up: None
-        }
-    }
-
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            AnchorMsg::Down(x, y) => {
-                self.last_x = x;
-                self.last_y = y;
-                let window = window();
-
-                let scope = ctx.link().clone();
-                self.on_move = Some(EventListener::new(&window, "mousemove", move |event: &Event| {
-                    let event: &MouseEvent = event.dyn_ref().unwrap();
-                    scope.send_message(AnchorMsg::Move(event.client_x(), event.client_y()));
-                    if event.buttons() == 0 {
-                        scope.send_message(AnchorMsg::Up);
-                    }
-                }));
-
-                let scope = ctx.link().clone();
-                self.on_up = Some(EventListener::new(&window, "mouseup", move |event: &Event| {
-                    let event: &MouseEvent = event.dyn_ref().unwrap();
-                    scope.send_message(AnchorMsg::Move(event.client_x(), event.client_y()));
-                    scope.send_message(AnchorMsg::Up);
-                }));
-            },
-            AnchorMsg::Move(x, y) => {
-                let dx = x - self.last_x;
-                let dy = y - self.last_y;
-                self.last_x = x;
-                self.last_y = y;
-                if let Some(on_move) = ctx.props().on_move.as_ref() {
-                    on_move.emit((dx, dy));
-                }
-
-            },
-            AnchorMsg::Up => {
-                self.on_move = None;
-                self.on_up = None;
-            },
-        }
-        true
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        return html!{
-            <div class={ctx.props().class} onmousedown={self.on_down.clone()}/>
         };
     }
 }
