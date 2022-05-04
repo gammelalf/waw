@@ -20,9 +20,9 @@
 				await init();
 				window.screen = new Screen(document.body);
 
-				const windowId = await screen.newWindow();
-				const div = screen.getWindow(windowId);
-				div.innerHTML = "I'm a window created from javascript!";
+				(await screen.getWindow(await screen.newWindow("FT",  ""))).innerHTML = "Foo";
+				(await screen.getWindow(await screen.newWindow("BT",  ""))).innerHTML = "Bar";
+				(await screen.getWindow(await screen.newWindow("BT²", ""))).innerHTML = "Baz";
 			})()
 		</script>
 	</body>

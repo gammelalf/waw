@@ -6,7 +6,7 @@ use yew::prelude::*;
 
 use crate::promise::PendingPromise;
 use crate::anchor::Anchor;
-use crate::window::{Window, WindowProps};
+use crate::window::Window;
 
 #[derive(Properties, PartialEq)]
 pub struct ScreenProps {
@@ -19,18 +19,17 @@ pub struct Screen {
     // Listening on direct parent would require ResizeObserver,
     // which is unstable and annoying to use in web-sys
 
-    pub windows: Vec<WindowProps>,
-    pub next_window_id: u32,
+    pub windows: Vec<Window>,
 
     pub docks: [Dock; 4],
 }
 pub enum ScreenMsg {
     Resize,
-    NewWindow(PendingPromise),
-    DeleteWindow(u32),
+    NewWindow(PendingPromise, String, String),
+    MoveWindow(usize, Option<DockPosition>),
     ResizeDock(DockPosition, i32, i32),
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum DockPosition {
     Top, Left, Bottom, Right
 }
@@ -45,7 +44,8 @@ impl Component for Screen {
 
     fn create(ctx: &Context<Self>) -> Self {
         let scope = ctx.link().clone();
-        let resize_listener = EventListener::new(&gloo::utils::window(), "resize", move |_event| {
+        let resize_listener =
+        EventListener::new(&gloo::utils::window(), "resize", move |_event| {
             scope.send_message(ScreenMsg::Resize);
         });
 
@@ -56,7 +56,6 @@ impl Component for Screen {
             resize_listener,
 
             windows: Vec::new(),
-            next_window_id: 0,
 
             docks: Default::default(),
         }
@@ -71,33 +70,17 @@ impl Component for Screen {
                 self.height = parent.offset_height() as u32;
                 true
             }
-            NewWindow(promise) => {
-                if self.next_window_id == u32::MAX {
-                    promise.reject("Out of ids");
-                    return false;
-                }
-                let id = self.next_window_id;
-                self.next_window_id += 1;
-
-                self.windows.push(WindowProps {id: id.into(), min_height: 0, min_width: 0});
-                promise.resolve(id);
+            NewWindow(promise, title, icon) => {
+                promise.resolve(self.windows.len() as u32);
+                let window = Window::new(title, icon);
+                self.windows.push(window);
                 true
             },
-            DeleteWindow(id) => {
-                let mut index = None;
-                for (i, props) in self.windows.iter().enumerate() {
-                    if props.id == (id as u32).into() {
-                        index = Some(i);
-                        break;
-                    }
+            MoveWindow(id, dock) => {
+                if let Some(window) = self.windows.get_mut(id) {
+                    window.dock = dock;
                 }
-
-                if let Some(index) = index {
-                    self.windows.remove(index);
-                    true
-                } else {
-                    false
-                }
+                true
             }
             ResizeDock(dock, dx, dy) => {
                 use DockPosition::*;
@@ -114,10 +97,6 @@ impl Component for Screen {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let on_move = |dock| ctx.link().callback(move |(dx, dy)|
-            ScreenMsg::ResizeDock(dock, dx, dy)
-        );
-        let windows = self.windows.iter().map(|props| html!{<Window ..props.clone()/>});
         return html!{
             <>
                 <div class="waw-docks" style={
@@ -127,27 +106,53 @@ impl Component for Screen {
                     docks[Top as usize].pos, docks[Left as usize].pos,
                     docks[Bottom as usize].pos, docks[Right as usize].pos)
                 }>
-                    <div class="waw-taskbar"/>
+                    <div class="waw-taskbar">
+                        {for self.windows.iter().map(|window| window.inside_taskbar())}
+                    </div>
                     <div class="waw-center-dock"/>
-                    <div class="waw-left-dock">
-                        <Anchor class="waw-e" on_move={on_move(DockPosition::Left)}/>
-                        <div class="waw-flex-vertical"/>
-                    </div>
-                    <div class="waw-right-dock">
-                        <Anchor class="waw-w" on_move={on_move(DockPosition::Right)}/>
-                        <div class="waw-flex-vertical"/>
-                    </div>
-                    <div class="waw-top-dock">
-                        <Anchor class="waw-s" on_move={on_move(DockPosition::Top)}/>
-                        <div class="waw-flex-horizontal"/>
-                    </div>
-                    <div class="waw-bottom-dock">
-                        <Anchor class="waw-n" on_move={on_move(DockPosition::Bottom)}/>
-                        <div class="waw-flex-horizontal"/>
-                    </div>
+                    {self.view_dock(DockPosition::Left, ctx)}
+                    {self.view_dock(DockPosition::Right, ctx)}
+                    {self.view_dock(DockPosition::Top, ctx)}
+                    {self.view_dock(DockPosition::Bottom, ctx)}
                 </div>
-                {for windows}
             </>
+        };
+    }
+}
+impl Screen {
+    fn view_dock(&self, dock: DockPosition, ctx: &Context<Self>) -> Html {
+        use DockPosition::*;
+        let dock_class = match dock {
+            Top    => "waw-top-dock",
+            Left   => "waw-left-dock",
+            Bottom => "waw-bottom-dock",
+            Right  => "waw-right-dock",
+        };
+        let flex_class = match dock {
+            Top    => "waw-flex-horizontal",
+            Left   => "waw-flex-vertical",
+            Bottom => "waw-flex-horizontal",
+            Right  => "waw-flex-vertical",
+        };
+        let anchor_class = match dock {
+            Top    => "waw-s",
+            Left   => "waw-e",
+            Bottom => "waw-n",
+            Right  => "waw-w",
+        };
+        let windows = self.windows.iter()
+            .filter(|&window| window.dock == Some(dock) && !window.hidden)
+            .map(|window| window.inside_dock());
+        return html!{
+            <div class={dock_class}>
+                <Anchor class={anchor_class}
+                        on_move={ctx.link().callback(move |(dx, dy)|
+                            ScreenMsg::ResizeDock(dock, dx, dy)
+                        )}/>
+                <div class={flex_class}>
+                    {for windows}
+                </div>
+            </div>
         };
     }
 }

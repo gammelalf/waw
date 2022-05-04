@@ -39,15 +39,15 @@
 }*/
 .waw-flex-vertical {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
 }
 .waw-flex-horizontal {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
 }
 
 
-.waw-taskbar {background-color: black;}
+.waw-taskbar {background-color: yellow;}
 .waw-left-dock {background-color: blue;}
 .waw-right-dock {background-color: red;}
 
