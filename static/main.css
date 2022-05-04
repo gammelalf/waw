@@ -11,6 +11,7 @@
     right: 0;
     left: 0;
     bottom: 0;
+    overflow: hidden;
     grid-template-columns: var(--left) 1fr var(--right);
     grid-template-rows: 5em var(--top) 1fr var(--bottom);
 }

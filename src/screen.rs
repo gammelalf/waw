@@ -1,4 +1,5 @@
 use std::cmp::max;
+use std::default::Default;
 use gloo::events::EventListener;
 use web_sys::HtmlElement;
 use yew::prelude::*;
@@ -21,20 +22,21 @@ pub struct Screen {
     pub windows: Vec<WindowProps>,
     pub next_window_id: u32,
 
-    pub top_dock: i32,
-    pub left_dock: i32,
-    pub bottom_dock: i32,
-    pub right_dock: i32,
+    pub docks: [Dock; 4],
 }
 pub enum ScreenMsg {
     Resize,
     NewWindow(PendingPromise),
     DeleteWindow(u32),
-    ResizeDock(Dock, i32, i32),
+    ResizeDock(DockPosition, i32, i32),
 }
 #[derive(Copy, Clone)]
-pub enum Dock {
+pub enum DockPosition {
     Top, Left, Bottom, Right
+}
+#[derive(Default)]
+pub struct Dock {
+    pub pos: i32,
 }
 
 impl Component for Screen {
@@ -56,10 +58,7 @@ impl Component for Screen {
             windows: Vec::new(),
             next_window_id: 0,
 
-            top_dock: 50,
-            left_dock: 100,
-            bottom_dock: 50,
-            right_dock: 100,
+            docks: Default::default(),
         }
     }
 
@@ -101,13 +100,14 @@ impl Component for Screen {
                 }
             }
             ResizeDock(dock, dx, dy) => {
-                use Dock::*;
-                match dock {
-                    Top    => { self.top_dock    = max(0, self.top_dock    + dy); },
-                    Left   => { self.left_dock   = max(0, self.left_dock   + dx); },
-                    Bottom => { self.bottom_dock = max(0, self.bottom_dock - dy); },
-                    Right  => { self.right_dock  = max(0, self.right_dock  - dx); },
-                }
+                use DockPosition::*;
+                let d = match dock {
+                    Top    =>  dy,
+                    Left   =>  dx,
+                    Bottom => -dy,
+                    Right  => -dx,
+                };
+                self.docks[dock as usize].pos = max(0, self.docks[dock as usize].pos + d);
                 true
             }
         }
@@ -120,23 +120,29 @@ impl Component for Screen {
         let windows = self.windows.iter().map(|props| html!{<Window ..props.clone()/>});
         return html!{
             <>
-                <div class="waw-docks" style={ format!("--left: {}px; --top: {}px; --right: {}px; --bottom: {}px;", self.left_dock, self.top_dock, self.right_dock, self.bottom_dock) }>
+                <div class="waw-docks" style={
+                    use DockPosition::*;
+                    let docks = &self.docks;
+                    format!("--top: {}px; --left: {}px; --bottom: {}px; --right: {}px;",
+                    docks[Top as usize].pos, docks[Left as usize].pos,
+                    docks[Bottom as usize].pos, docks[Right as usize].pos)
+                }>
                     <div class="waw-taskbar"/>
                     <div class="waw-center-dock"/>
                     <div class="waw-left-dock">
-                        <Anchor class="waw-e" on_move={on_move(Dock::Left)}/>
+                        <Anchor class="waw-e" on_move={on_move(DockPosition::Left)}/>
                         <div class="waw-flex-vertical"/>
                     </div>
                     <div class="waw-right-dock">
-                        <Anchor class="waw-w" on_move={on_move(Dock::Right)}/>
+                        <Anchor class="waw-w" on_move={on_move(DockPosition::Right)}/>
                         <div class="waw-flex-vertical"/>
                     </div>
                     <div class="waw-top-dock">
-                        <Anchor class="waw-s" on_move={on_move(Dock::Top)}/>
+                        <Anchor class="waw-s" on_move={on_move(DockPosition::Top)}/>
                         <div class="waw-flex-horizontal"/>
                     </div>
                     <div class="waw-bottom-dock">
-                        <Anchor class="waw-n" on_move={on_move(Dock::Bottom)}/>
+                        <Anchor class="waw-n" on_move={on_move(DockPosition::Bottom)}/>
                         <div class="waw-flex-horizontal"/>
                     </div>
                 </div>
