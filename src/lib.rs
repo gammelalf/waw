@@ -9,8 +9,7 @@ pub mod window;
 pub mod screen;
 
 use crate::promise::{Promise, PendingPromise};
-use crate::floating::WindowId;
-use crate::screen::{DockPosition, Screen, ScreenMsg, ScreenProps};
+use crate::screen::{Screen, ScreenMsg, ScreenProps};
 
 
 #[wasm_bindgen(js_name="Screen")]
@@ -30,27 +29,19 @@ impl ScreenHandle {
     }
 
     #[wasm_bindgen(js_name="newWindow")]
-    pub fn new_window(&self, title: String, icon: String) -> Promise {
+    pub fn new_window(&self, options: JsValue) -> Promise {
         let (promise, pending) = PendingPromise::new();
-        self.0.send_message(ScreenMsg::NewWindow(pending, title, icon));
+        if let Ok(init) = options.try_into() {
+            self.0.send_message(ScreenMsg::NewWindow(pending, init));
+        } else {
+            pending.reject("Invalid argument");
+        }
         promise
     }
 
     #[wasm_bindgen(js_name="getWindow")]
     pub fn get_window(&self, id: u32) -> Option<Element> {
         Some(self.0.get_component()?.windows.get(id as usize)?.div.clone())
-    }
-
-    pub fn move_window(&self, id: u32, dock: i32) {
-        let id = id as usize;
-        let dock = match dock {
-            0 => Some(DockPosition::Top),
-            1 => Some(DockPosition::Left),
-            2 => Some(DockPosition::Bottom),
-            3 => Some(DockPosition::Right),
-            _ => None,
-        };
-        self.0.send_message(ScreenMsg::MoveWindow(id, dock));
     }
 
     pub fn destroy(self) {

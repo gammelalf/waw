@@ -91,6 +91,9 @@
     bottom: 0;
 }
 
+/*
+ * Anchor classes
+ */
 .waw-n, .waw-nw, .waw-w, .waw-sw, .waw-s, .waw-se, .waw-e, .waw-ne {
     --delta: 5px;
     position: absolute;

@@ -6,7 +6,7 @@ use yew::prelude::*;
 
 use crate::promise::PendingPromise;
 use crate::anchor::Anchor;
-use crate::window::Window;
+use crate::window::{Window, WindowInit};
 
 #[derive(Properties, PartialEq)]
 pub struct ScreenProps {
@@ -25,8 +25,9 @@ pub struct Screen {
 }
 pub enum ScreenMsg {
     Resize,
-    NewWindow(PendingPromise, String, String),
+    NewWindow(PendingPromise, WindowInit),
     MoveWindow(usize, Option<DockPosition>),
+    ToggleWindow(usize),
     ResizeDock(DockPosition, i32, i32),
 }
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -70,17 +71,22 @@ impl Component for Screen {
                 self.height = parent.offset_height() as u32;
                 true
             }
-            NewWindow(promise, title, icon) => {
+            NewWindow(promise, init) => {
                 promise.resolve(self.windows.len() as u32);
-                let window = Window::new(title, icon);
-                self.windows.push(window);
+                self.windows.push(init.into());
                 true
-            },
+            }
             MoveWindow(id, dock) => {
                 if let Some(window) = self.windows.get_mut(id) {
                     window.dock = dock;
-                }
-                true
+                    window.active = true;
+                    true
+                } else { false }
+            }
+            ToggleWindow(id) => {
+                if let Some(window) = self.windows.get_mut(id) {
+                    window.active = !window.active; true
+                } else { false }
             }
             ResizeDock(dock, dx, dy) => {
                 use DockPosition::*;
@@ -118,7 +124,7 @@ impl Component for Screen {
     }
 }
 impl Screen {
-    fn view_taskbar(&self, _ctx: &Context<Self>) -> Html {
+    fn view_taskbar(&self, ctx: &Context<Self>) -> Html {
         let icons = self.windows
             .iter()
             .enumerate()
@@ -130,6 +136,9 @@ impl Screen {
                         if let Some(dt) = event.data_transfer() {
                             dt.set_data("application/waw", &id.to_string());
                         }
+                    })}
+                    onclick={ctx.link().callback(move |_: MouseEvent| {
+                        ScreenMsg::ToggleWindow(id)
                     })}
                 />
             });
@@ -168,6 +177,9 @@ impl Screen {
             .enumerate()
             .filter(|(_, window)|
                 window.dock == Some(dock)
+            )
+            .filter(|(_, window)|
+                window.active
             )
             .map(|(id, window)| html!{
                 <key={id}>

@@ -1,55 +1,59 @@
-use gloo::utils::document;
+use serde::Deserialize;
+use wasm_bindgen::prelude::*;
 use web_sys::Element;
-use yew::prelude::*;
+use gloo::utils::document;
 use crate::screen::DockPosition;
 
+/**
+ * This struct directly matches the javascript object expected `Screen.newWindow`.
+ *
+ * Json is used as intermediate to pass the initialisation data
+ * in a more flexibly manor.
+ */
+#[derive(Deserialize)]
+pub struct WindowInit {
+    pub title: Option<String>,
+    pub icon: Option<String>,
+    pub dock: Option<String>,
+}
+impl TryFrom<JsValue> for WindowInit {
+    type Error = serde_json::Error;
+    fn try_from(value: JsValue) -> Result<Self, Self::Error> {
+        value.into_serde()
+    }
+}
+
+/**
+ * Internal representation for a window
+ *
+ * Created from a `WindowInit` struct in Screen's update method.
+ */
 pub struct Window {
     pub title: String,
     pub icon: String,
     pub div: Element,
     pub dock: Option<DockPosition>,
+    pub active: bool,
 }
-impl Window {
-    pub fn new(title: String, icon: String) -> Window {
+impl From<WindowInit> for Window {
+    fn from(init: WindowInit) -> Self {
         Window {
-            title, icon,
+            title: init.title.unwrap_or_default(),
+            icon: init.icon.unwrap_or_default(),
             div: document()
                 .create_element("div")
                 .expect("Couldn't create new <div>"),
-            dock: None,
+            dock: init.dock.map(|mut dock| {
+                dock.make_ascii_lowercase();
+                match &dock[..] {
+                    "top"    => Some(DockPosition::Top),
+                    "left"   => Some(DockPosition::Left),
+                    "bottom" => Some(DockPosition::Bottom),
+                    "right"  => Some(DockPosition::Right),
+                    _ => None,
+                }
+            }).flatten(),
+            active: false,
         }
     }
-    pub fn inside_dock(&self) -> Html {
-        Html::VRef(self.div.clone().into())
-    }
-    pub fn inside_taskbar(&self) -> Html {
-        return html!{
-            <img src={self.icon.clone()} alt={self.title.clone()}/>
-        };
-    }
 }
-
-/*
-#[wasm_bindgen(js_name="Window")]
-pub struct JsWindow(pub Rc<Window>);
-#[wasm_bindgen(js_class="Window")]
-impl JsWindow {
-    #[wasm_bindgen(getter)]
-    pub fn icon(&self) -> String {
-        self.0.icon.clone()
-    }
-    #[wasm_bindgen(getter)]
-    pub fn title(&self) -> String {
-        self.0.title.clone()
-    }
-    #[wasm_bindgen(getter)]
-    pub fn div(&self) -> Element {
-        self.0.div.clone()
-    }
-}
-impl From<Rc<Window>> for JsWindow {
-    fn from(window: Rc<Window>) -> Self {
-        JsWindow(window)
-    }
-}
-*/
