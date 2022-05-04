@@ -25,11 +25,22 @@
 .waw-center-dock { grid-column: 2 / 3; }
 .waw-right-dock  { grid-column: 3 / 4; }
 
-.waw-taskbar, .waw-top-dock, .waw-bottom-dock {
+.waw-docks > * {
+    position: relative;
+}
+/*.waw-taskbar, .waw-top-dock, .waw-bottom-dock {
     display: flex;
     flex-direction: row;
 }
 .waw-left-dock, .waw-right-dock {
+    display: flex;
+    flex-direction: column;
+}*/
+.waw-flex-vertical {
+    display: flex;
+    flex-direction: row;
+}
+.waw-flex-horizontal {
     display: flex;
     flex-direction: column;
 }
