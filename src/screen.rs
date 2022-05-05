@@ -79,17 +79,23 @@ impl Component for Screen {
             }
             NewWindow(promise, init) => {
                 let id = self.windows.len();
-                if self.center_dock.is_none() && init.request_center == Some(true) {
+                let request_center = init.request_center.unwrap_or(false);
+                let mut window: Window = init.into();
+                if self.center_dock.is_none() && request_center {
                     self.center_dock = Some(id);
+                    window.active = true;
                 }
-                self.windows.push(init.into());
+                self.windows.push(window);
                 promise.resolve(id as u32);
                 true
             }
             MoveWindow(id, dock) => {
                 if let Some(window) = self.windows.get_mut(id) {
-                    window.dock = Some(dock);
+                    window.dock = dock;
                     window.active = true;
+                    if self.center_dock == Some(id) {
+                        self.center_dock = None;
+                    }
                     true
                 } else { false }
             }
@@ -128,7 +134,8 @@ impl Component for Screen {
             });
         let center_dock = self.center_dock.map(|id| {
             let window = self.windows.get(id)?;
-            return Some(Html::VRef(window.div.clone().into()));
+            if window.active {Some(Html::VRef(window.div.clone().into()))}
+            else {None}
         }).flatten();
 
         let [top, left, bottom, right] = docks;
@@ -164,7 +171,7 @@ impl Screen {
                     alt={window.title.clone()}
                     ondragstart={Callback::from(move |event: DragEvent| {
                         if let Some(dt) = event.data_transfer() {
-                            dt.set_data("application/waw", &id.to_string());
+                            dt.set_data("application/waw", &id.to_string()).unwrap();
                         }
                     })}
                     onclick={ctx.link().callback(move |_: MouseEvent| {
@@ -206,7 +213,7 @@ impl Screen {
             .iter()
             .enumerate()
             .filter(|(_, window)|
-                window.dock == Some(dock)
+                window.dock == dock
             )
             .filter(|(_, window)|
                 window.active

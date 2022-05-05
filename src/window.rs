@@ -11,10 +11,11 @@ use crate::screen::DockPosition;
  * in a more flexibly manor.
  */
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct WindowInit {
     pub title: Option<String>,
     pub icon: Option<String>,
-    pub dock: Option<String>,
+    pub dock: Dock,
     #[serde(alias="requestCenter")]
     pub request_center: Option<bool>,
 }
@@ -22,6 +23,22 @@ impl TryFrom<JsValue> for WindowInit {
     type Error = serde_json::Error;
     fn try_from(value: JsValue) -> Result<Self, Self::Error> {
         value.into_serde()
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Dock {
+    Top, Left, Bottom, Right
+}
+impl From<Dock> for DockPosition {
+    fn from(dock: Dock) -> Self {
+        match dock {
+            Dock::Top => DockPosition::Top,
+            Dock::Left => DockPosition::Left,
+            Dock::Bottom => DockPosition::Bottom,
+            Dock::Right => DockPosition::Right,
+        }
     }
 }
 
@@ -34,7 +51,7 @@ pub struct Window {
     pub title: String,
     pub icon: String,
     pub div: Element,
-    pub dock: Option<DockPosition>,
+    pub dock: DockPosition,
     pub active: bool,
 }
 impl From<WindowInit> for Window {
@@ -45,16 +62,7 @@ impl From<WindowInit> for Window {
             div: document()
                 .create_element("div")
                 .expect("Couldn't create new <div>"),
-            dock: init.dock.map(|mut dock| {
-                dock.make_ascii_lowercase();
-                match &dock[..] {
-                    "top"    => Some(DockPosition::Top),
-                    "left"   => Some(DockPosition::Left),
-                    "bottom" => Some(DockPosition::Bottom),
-                    "right"  => Some(DockPosition::Right),
-                    _ => None,
-                }
-            }).flatten(),
+            dock: init.dock.into(),
             active: false,
         }
     }

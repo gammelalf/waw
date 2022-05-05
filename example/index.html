@@ -31,6 +31,7 @@
 						title,
 						icon: "/example/static/" + icon,
 						dock: randomChoice(["top", "left", "bottom", "right"]),
+						requestCenter: true,
 					});
 					const div = await screen.getWindow(id);
 					return div;
