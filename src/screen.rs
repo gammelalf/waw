@@ -23,13 +23,17 @@ pub struct Screen {
 
     pub dock_sizes: [i32; 4],
     pub center_dock: Option<usize>,
+
+    // Event handler which is assigned to dragenter and dragover
+    // to make something a target for dragged windows
+    pub make_drop_target: Callback<DragEvent>,
 }
 pub enum ScreenMsg {
     Resize,
     NewWindow(PendingPromise, WindowInit),
     MoveWindow(usize, DockPosition),
     ToggleWindow(usize),
-    CenterWindow(Option<usize>),
+    CenterWindow(usize),
     ResizeDock(DockPosition, i32, i32),
 }
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -65,6 +69,14 @@ impl Component for Screen {
 
             dock_sizes: [height as i32 / 10, width as i32 / 10, height as i32 / 5, width as i32 / 5],
             center_dock: None,
+
+            make_drop_target: Callback::from(|event: DragEvent| {
+                if let Some(dt) = event.data_transfer() {
+                    if dt.types().includes(&"application/waw".into(), 0) {
+                        event.prevent_default();
+                    }
+                }
+            }),
         }
     }
 
@@ -105,7 +117,20 @@ impl Component for Screen {
                 } else { false }
             }
             CenterWindow(id) => {
-                self.center_dock = id;
+                // Remove and close old centered window
+                if let Some(old) = self.center_dock {
+                    if let Some(old) = self.windows.get_mut(old) {
+                        old.active = false;
+                    }
+                    self.center_dock = None;
+                }
+
+                // Set and open new centered window
+                if let Some(new) = self.windows.get_mut(id) {
+                    new.active = true;
+                    self.center_dock = Some(id);
+                }
+
                 true
             }
             ResizeDock(dock, dx, dy) => {
@@ -146,7 +171,18 @@ impl Component for Screen {
                     format!("--top: {}px; --left: {}px; --bottom: {}px; --right: {}px;",
                     dock_sizes[0], dock_sizes[1], dock_sizes[2], dock_sizes[3])
                 }>
-                    <div class="waw-center-dock">
+                    <div
+                        class="waw-center-dock"
+                        ondragenter={self.make_drop_target.clone()}
+                        ondragover={self.make_drop_target.clone()}
+                        ondrop={ctx.link().batch_callback(|event: DragEvent| {
+                            let dt = event.data_transfer()?;
+                            let id = dt.get_data("application/waw").ok()?;
+                            let id: usize = id.parse().ok()?;
+                            event.prevent_default();
+                            Some(ScreenMsg::CenterWindow(id))
+                        })}
+                    >
                         if let Some(center) = center_dock {
                             {center}
                         }
@@ -201,14 +237,6 @@ impl Screen {
             Right  => "waw-w",
         };
 
-        let make_drop_target = Callback::from(|event: DragEvent| {
-            if let Some(dt) = event.data_transfer() {
-                if dt.types().includes(&"application/waw".into(), 0) {
-                    event.prevent_default();
-                }
-            }
-        });
-
         let windows: Vec<Html> = self.windows
             .iter()
             .enumerate()
@@ -232,8 +260,8 @@ impl Screen {
         return (visible, html!{
             <div
                 class={dock_class}
-                ondragenter={make_drop_target.clone()}
-                ondragover={make_drop_target}
+                ondragenter={self.make_drop_target.clone()}
+                ondragover={self.make_drop_target.clone()}
                 ondrop={ctx.link().batch_callback(move |event: DragEvent| {
                     let dt = event.data_transfer()?;
                     let id = dt.get_data("application/waw").ok()?;
