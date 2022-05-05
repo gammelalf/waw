@@ -15,6 +15,8 @@ pub struct WindowInit {
     pub title: Option<String>,
     pub icon: Option<String>,
     pub dock: Option<String>,
+    #[serde(alias="requestCenter")]
+    pub request_center: Option<bool>,
 }
 impl TryFrom<JsValue> for WindowInit {
     type Error = serde_json::Error;

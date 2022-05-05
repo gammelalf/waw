@@ -27,8 +27,9 @@ pub struct Screen {
 pub enum ScreenMsg {
     Resize,
     NewWindow(PendingPromise, WindowInit),
-    MoveWindow(usize, Option<DockPosition>),
+    MoveWindow(usize, DockPosition),
     ToggleWindow(usize),
+    CenterWindow(Option<usize>),
     ResizeDock(DockPosition, i32, i32),
 }
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -77,13 +78,17 @@ impl Component for Screen {
                 true
             }
             NewWindow(promise, init) => {
-                promise.resolve(self.windows.len() as u32);
+                let id = self.windows.len();
+                if self.center_dock.is_none() && init.request_center == Some(true) {
+                    self.center_dock = Some(id);
+                }
                 self.windows.push(init.into());
+                promise.resolve(id as u32);
                 true
             }
             MoveWindow(id, dock) => {
                 if let Some(window) = self.windows.get_mut(id) {
-                    window.dock = dock;
+                    window.dock = Some(dock);
                     window.active = true;
                     true
                 } else { false }
@@ -92,6 +97,10 @@ impl Component for Screen {
                 if let Some(window) = self.windows.get_mut(id) {
                     window.active = !window.active; true
                 } else { false }
+            }
+            CenterWindow(id) => {
+                self.center_dock = id;
+                true
             }
             ResizeDock(dock, dx, dy) => {
                 use DockPosition::*;
@@ -117,6 +126,10 @@ impl Component for Screen {
                 }
                 html
             });
+        let center_dock = self.center_dock.map(|id| {
+            let window = self.windows.get(id)?;
+            return Some(Html::VRef(window.div.clone().into()));
+        }).flatten();
 
         let [top, left, bottom, right] = docks;
         return html!{
@@ -126,7 +139,11 @@ impl Component for Screen {
                     format!("--top: {}px; --left: {}px; --bottom: {}px; --right: {}px;",
                     dock_sizes[0], dock_sizes[1], dock_sizes[2], dock_sizes[3])
                 }>
-                    <div class="waw-center-dock"/>
+                    <div class="waw-center-dock">
+                        if let Some(center) = center_dock {
+                            {center}
+                        }
+                    </div>
                     {left}
                     {right}
                     {top}
@@ -215,7 +232,7 @@ impl Screen {
                     let id = dt.get_data("application/waw").ok()?;
                     let id: usize = id.parse().ok()?;
                     event.prevent_default();
-                    Some(ScreenMsg::MoveWindow(id, Some(dock)))
+                    Some(ScreenMsg::MoveWindow(id, dock))
                 })}
             >
                 if visible {
