@@ -5,7 +5,7 @@ A window manager written in rust + yew compiled to web assembly.
 ## Usage
 Attach the required css file
 ```html
-<link rel="stylesheet" href="/static/functional.css">
+<link rel="stylesheet" href="/static/waw.css">
 ```
 
 Import the javascript gloo module
@@ -37,4 +37,8 @@ div.innerHTML = "Hello World!";
 ```
 
 See `example/index.html` for more.
+
+# Styling
+
+For now see `example/static/pnp-zone.css` as ref.
 
