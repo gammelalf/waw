@@ -3,9 +3,14 @@
 A window manager written in rust + yew compiled to web assembly.
 
 ## Usage
+Attach the required css file
+```html
+<link rel="stylesheet" href="/static/functional.css">
+```
+
 Import the javascript gloo module
 ```javascript
-import init, {Screen} from "./waw.js"; // Static (Inside another module)
+import init, {Screen} from "/pkg/waw.js"; // Static (Inside another module)
 
 const {default: init, Screen} = await import("./waw.js"); // Asynchronous
 ```
@@ -20,15 +25,14 @@ Create a `Screen` inside an html container element (currently only `<body>` is r
 const screen = new Screen(document.body);
 ```
 
-Create and destroy windows
+Register a window
 ```javascript
-const windowId = await screen.newWindow();
-screent.deleteWindow(windowId);
+const windowId = await screen.newWindow({title: "Some Window"});
 ```
 
 Each window is identified by an id. To get the window's `<div>` to add content to use
 ```javascript
-const div = screen.getWindow(windowId);
+const div = await screen.getWindow(windowId);
 div.innerHTML = "Hello World!";
 ```
 

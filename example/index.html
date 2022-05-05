@@ -11,7 +11,8 @@
 				height: 100vh;
 			}
 		</style>
-		<link rel="stylesheet" href="/static/main.css">
+		<link rel="stylesheet" href="/static/functional.css">
+		<link rel="stylesheet" href="/static/cosmetic.css">
 	</head>
 	<body>
 		<script>
@@ -20,9 +21,30 @@
 				await init();
 				window.screen = new Screen(document.body);
 
-				(await screen.getWindow(await screen.newWindow("FT",  ""))).innerHTML = "Foo";
-				(await screen.getWindow(await screen.newWindow("BT",  ""))).innerHTML = "Bar";
-				(await screen.getWindow(await screen.newWindow("BT²", ""))).innerHTML = "Baz";
+				function randomChoice(array) {
+					let i = Math.floor(Math.random() * array.length);
+					return array[i];
+				}
+
+				async function getDiv(title, icon) {
+					const id = await screen.newWindow({
+						title,
+						icon: "/example/static/" + icon,
+						dock: randomChoice(["top", "left", "bottom", "right"]),
+					});
+					const div = await screen.getWindow(id);
+					return div;
+				}
+				(await getDiv("Bell", "bell.svg")).innerHTML = "<img src='http://via.placeholder.com/640x360'>";
+				(await getDiv("Dashboard", "dashboard.svg")).innerHTML = "<img src='https://www.fillmurray.com/640/360'>";
+				(await getDiv("Home", "home.svg")).innerHTML = "<img src='https://dummyimage.com/640x360/fff/aaa'>";
+				(await getDiv("Screen", "screen.svg")).innerHTML = "<img src='https://loremflickr.com/640/360'>";
+				(await getDiv("Trash", "trash.svg")).innerHTML = "<img src='https://placekitten.com/640/360'>";
+				(await getDiv("Building", "building.svg")).innerHTML = "<img src='https://baconmockup.com/640/360'>";
+				(await getDiv("Flag", "flag.svg")).innerHTML = "<img src='https://placebeard.it/640x360'>";
+				(await getDiv("Microphone", "microphone.svg")).innerHTML = "<img src='http://lorempixel.com/640/360'>";
+				(await getDiv("Settings", "settings.svg")).innerHTML = "<img src='https://www.placecage.com/640/360'>";
+				(await getDiv("User", "user.svg")).innerHTML = "<img src='http://placeimg.com/640/360/any'>";
 			})()
 		</script>
 	</body>
