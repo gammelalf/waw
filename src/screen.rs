@@ -97,8 +97,8 @@ impl Component for Screen {
                     self.center_dock = Some(id);
                     window.active = true;
                 }
+                promise.resolve(window.div.clone());
                 self.windows.push(window);
-                promise.resolve(id as u32);
                 true
             }
             MoveWindow(id, dock) => {

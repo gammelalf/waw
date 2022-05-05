@@ -40,11 +40,6 @@ impl ScreenHandle {
         promise
     }
 
-    #[wasm_bindgen(js_name="getWindow")]
-    pub fn get_window(&self, id: u32) -> Option<Element> {
-        Some(self.0.get_component()?.windows.get(id as usize)?.div.clone())
-    }
-
     pub fn destroy(self) {
         self.0.destroy();
     }

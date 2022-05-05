@@ -27,13 +27,7 @@ const screen = new Screen(document.body);
 
 Register a window
 ```javascript
-const windowId = await screen.newWindow({title: "Some Window"});
-```
-
-Each window is identified by an id. To get the window's `<div>` to add content to use
-```javascript
-const div = await screen.getWindow(windowId);
-div.innerHTML = "Hello World!";
+const windowId = await screen.newWindow({title: "Some Window", dock: "left"});
 ```
 
 See `example/index.html` for more.
