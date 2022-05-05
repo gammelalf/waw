@@ -103,7 +103,10 @@ impl Component for Screen {
             }
             MoveWindow(id, dock) => {
                 if let Some(window) = self.windows.get_mut(id) {
-                    window.dock = dock;
+                    if window.center_only() {
+                        return false;
+                    }
+                    window.dock = Some(dock);
                     window.active = true;
                     if self.center_dock == Some(id) {
                         self.center_dock = None;
@@ -113,7 +116,13 @@ impl Component for Screen {
             }
             ToggleWindow(id) => {
                 if let Some(window) = self.windows.get_mut(id) {
-                    window.active = !window.active; true
+                    if window.center_only() {
+                        if !window.active {
+                            self.center_dock = Some(id);
+                        }
+                    }
+                    window.active = !window.active;
+                    true
                 } else { false }
             }
             CenterWindow(id) => {
@@ -222,7 +231,7 @@ impl Screen {
             .iter()
             .enumerate()
             .filter(|(_, window)|
-                window.dock == dock
+                window.dock == Some(dock)
             )
             .filter(|(_, window)|
                 window.active
@@ -268,20 +277,34 @@ impl Screen {
     }
 
     fn view_window_icon(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {
-        return html!{
-            <img
-                src={window.icon.clone()}
-                alt={window.title.clone()}
-                ondragstart={Callback::from(move |event: DragEvent| {
-                    if let Some(dt) = event.data_transfer() {
-                        dt.set_data("application/waw", &id.to_string()).unwrap();
-                    }
-                })}
-                onclick={ctx.link().callback(move |_: MouseEvent| {
-                    ScreenMsg::ToggleWindow(id)
-                })}
-            />
-        };
+        if window.center_only() {
+            return html!{
+                <img
+                    src={window.icon.clone()}
+                    alt={window.title.clone()}
+                    draggable="false"
+                    onclick={ctx.link().callback(move |_: MouseEvent| {
+                        ScreenMsg::ToggleWindow(id)
+                    })}
+                />
+            };
+        } else {
+            return html!{
+                <img
+                    src={window.icon.clone()}
+                    alt={window.title.clone()}
+                    draggable="true"
+                    ondragstart={Callback::from(move |event: DragEvent| {
+                        if let Some(dt) = event.data_transfer() {
+                            dt.set_data("application/waw", &id.to_string()).unwrap();
+                        }
+                    })}
+                    onclick={ctx.link().callback(move |_: MouseEvent| {
+                        ScreenMsg::ToggleWindow(id)
+                    })}
+                />
+            };
+        }
     }
 
     fn view_window(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {

@@ -26,15 +26,13 @@
 					return array[i];
 				}
 
-				async function getDiv(title, icon) {
-					const id = await screen.newWindow({
+				function getDiv(title, icon) {
+					return screen.newWindow({
 						title,
 						icon: "/example/static/" + icon,
-						dock: randomChoice(["top", "left", "bottom", "right"]),
+						dock: randomChoice(["top", "left", "bottom", "right", "center"]),
 						requestCenter: true,
 					});
-					const div = await screen.getWindow(id);
-					return div;
 				}
 				(await getDiv("Bell", "bell.svg")).innerHTML = "<img src='http://via.placeholder.com/640x360'>";
 				(await getDiv("Dashboard", "dashboard.svg")).innerHTML = "<img src='https://www.fillmurray.com/640/360'>";

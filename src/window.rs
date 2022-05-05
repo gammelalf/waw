@@ -29,15 +29,16 @@ impl TryFrom<JsValue> for WindowInit {
 #[derive(Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Dock {
-    Top, Left, Bottom, Right
+    Top, Left, Bottom, Right, Center
 }
-impl From<Dock> for DockPosition {
+impl From<Dock> for Option<DockPosition> {
     fn from(dock: Dock) -> Self {
         match dock {
-            Dock::Top => DockPosition::Top,
-            Dock::Left => DockPosition::Left,
-            Dock::Bottom => DockPosition::Bottom,
-            Dock::Right => DockPosition::Right,
+            Dock::Top => Some(DockPosition::Top),
+            Dock::Left => Some(DockPosition::Left),
+            Dock::Bottom => Some(DockPosition::Bottom),
+            Dock::Right => Some(DockPosition::Right),
+            Dock::Center => None,
         }
     }
 }
@@ -51,7 +52,7 @@ pub struct Window {
     pub title: String,
     pub icon: String,
     pub div: Element,
-    pub dock: DockPosition,
+    pub dock: Option<DockPosition>, // None indicates center only and can't change after construction
     pub active: bool,
 }
 impl From<WindowInit> for Window {
@@ -65,5 +66,11 @@ impl From<WindowInit> for Window {
             dock: init.dock.into(),
             active: false,
         }
+    }
+}
+impl Window {
+    #[inline]
+    pub fn center_only(&self) -> bool {
+        self.dock.is_none()
     }
 }
