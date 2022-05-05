@@ -120,19 +120,19 @@ impl Component for Screen {
 
         let [top, left, bottom, right] = docks;
         return html!{
-            <>
+            <div class="waw-screen">
+                {self.view_taskbar(ctx)}
                 <div class="waw-docks" style={
                     format!("--top: {}px; --left: {}px; --bottom: {}px; --right: {}px;",
                     dock_sizes[0], dock_sizes[1], dock_sizes[2], dock_sizes[3])
                 }>
-                    {self.view_taskbar(ctx)}
                     <div class="waw-center-dock"/>
                     {left}
                     {right}
                     {top}
                     {bottom}
                 </div>
-            </>
+            </div>
         };
     }
 }
