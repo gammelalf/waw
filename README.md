@@ -2,6 +2,17 @@
 
 A window manager written in rust + yew compiled to web assembly.
 
+## Compiling
+Make sure you have [wasm-pack](https://github.com/rustwasm/wasm-pack) installed
+```bash
+cargo install wasm-pack
+```
+
+And execute it
+```bash
+wasm-pack build --target web
+```
+
 ## Usage
 Attach the required css file
 ```html
@@ -32,7 +43,7 @@ const windowId = await screen.newWindow({title: "Some Window", dock: "left"});
 
 See `example/index.html` for more.
 
-# Styling
+## Styling
 
 For now see `example/static/pnp-zone.css` as ref.
 
