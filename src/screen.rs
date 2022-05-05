@@ -159,14 +159,20 @@ impl Component for Screen {
             });
         let center_dock = self.center_dock.map(|id| {
             let window = self.windows.get(id)?;
-            if window.active {Some(Html::VRef(window.div.clone().into()))}
+            if window.active {Some(self.view_window(ctx, id, window))}
             else {None}
         }).flatten();
 
         let [top, left, bottom, right] = docks;
         return html!{
             <div class="waw-screen">
-                {self.view_taskbar(ctx)}
+                <div class="waw-taskbar">
+                    {for self.windows
+                        .iter()
+                        .enumerate()
+                        .map(|(id, window)| self.view_window_icon(ctx, id, window))
+                    }
+                </div>
                 <div class="waw-docks" style={
                     format!("--top: {}px; --left: {}px; --bottom: {}px; --right: {}px;",
                     dock_sizes[0], dock_sizes[1], dock_sizes[2], dock_sizes[3])
@@ -197,31 +203,6 @@ impl Component for Screen {
     }
 }
 impl Screen {
-    fn view_taskbar(&self, ctx: &Context<Self>) -> Html {
-        let icons = self.windows
-            .iter()
-            .enumerate()
-            .map(|(id, window)| html!{
-                <img
-                    src={window.icon.clone()}
-                    alt={window.title.clone()}
-                    ondragstart={Callback::from(move |event: DragEvent| {
-                        if let Some(dt) = event.data_transfer() {
-                            dt.set_data("application/waw", &id.to_string()).unwrap();
-                        }
-                    })}
-                    onclick={ctx.link().callback(move |_: MouseEvent| {
-                        ScreenMsg::ToggleWindow(id)
-                    })}
-                />
-            });
-        return html!{
-            <div class="waw-taskbar">
-                {for icons}
-            </div>
-        };
-    }
-
     fn view_dock(&self, ctx: &Context<Self>, dock: DockPosition) -> (bool, Html) {
         use DockPosition::*;
         let dock_class = match dock {
@@ -251,7 +232,7 @@ impl Screen {
             )
             .map(|(id, window)| html!{
                 <key={id}>
-                    {Html::VRef(window.div.clone().into())}
+                    {self.view_window(ctx, id, window)}
                 </>
             })
             .collect();
@@ -284,5 +265,31 @@ impl Screen {
                 }
             </div>
         });
+    }
+
+    fn view_window_icon(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {
+        return html!{
+            <img
+                src={window.icon.clone()}
+                alt={window.title.clone()}
+                ondragstart={Callback::from(move |event: DragEvent| {
+                    if let Some(dt) = event.data_transfer() {
+                        dt.set_data("application/waw", &id.to_string()).unwrap();
+                    }
+                })}
+                onclick={ctx.link().callback(move |_: MouseEvent| {
+                    ScreenMsg::ToggleWindow(id)
+                })}
+            />
+        };
+    }
+
+    fn view_window(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {
+        return html!{
+            <div class="waw-window">
+                {self.view_window_icon(ctx, id, window)}
+                {Html::VRef(window.div.clone().into())}
+            </div>
+        };
     }
 }

@@ -74,7 +74,21 @@
 .waw-right-dock > .waw-drop-zone { left: var(--delta); }
 
 .waw-window {
-    /* overwritten by inline css */
+    position: relative;
+}
+/* Icon used to drag windows */
+.waw-window > img:first-child {
+    z-index: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1em;
+    height: 1em;
+}
+
+/* Old code for floating windows
+.waw-window {
+    /* overwritten by inline css
     --x: 0;
     --y: 0;
     --width: 0;
@@ -106,6 +120,7 @@
     top: 1em;
     bottom: 0;
 }
+*/
 
 /*
  * Anchor classes
