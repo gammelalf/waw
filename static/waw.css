@@ -126,7 +126,7 @@
  * Anchor classes
  */
 .waw-n, .waw-nw, .waw-w, .waw-sw, .waw-s, .waw-se, .waw-e, .waw-ne {
-    --delta: 5px;
+    --delta: 0.5em;
     position: absolute;
 }
 .waw-n, .waw-s {

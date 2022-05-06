@@ -2,6 +2,7 @@ use wasm_bindgen::prelude::*;
 use web_sys::{Element, HtmlElement};
 use yew::prelude::*;
 
+pub mod dragndrop;
 pub mod promise;
 pub mod anchor;
 pub mod drop_zone;

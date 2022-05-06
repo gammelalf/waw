@@ -1,8 +1,5 @@
-use wasm_bindgen::JsCast;
-use web_sys::MouseEvent;
-use gloo::events::EventListener;
-use gloo::utils::window;
-use yew::prelude::*;
+use yew::{prelude::*, html::Scope};
+use crate::dragndrop::{DragCallbacks, DragHandler, UnifiedPointerEvent};
 
 #[derive(Properties, PartialEq)]
 pub struct AnchorProps {
@@ -14,15 +11,14 @@ pub struct AnchorProps {
 pub struct Anchor {
     last_x: i32,
     last_y: i32,
-    on_down: Callback<MouseEvent>,
-    on_move: Option<EventListener>,
-    on_up: Option<EventListener>,
+    drag_callbacks: DragCallbacks,
 }
 pub enum AnchorMsg {
     Down(i32, i32),
     Move(i32, i32),
     Up,
 }
+
 impl Component for Anchor {
     type Message = AnchorMsg;
     type Properties = AnchorProps;
@@ -31,11 +27,7 @@ impl Component for Anchor {
         Anchor {
             last_x: 0,
             last_y: 0,
-            on_down: ctx.link().callback(|event: MouseEvent|
-                AnchorMsg::Down(event.client_x(), event.client_y())
-            ),
-            on_move: None,
-            on_up: None
+            drag_callbacks: AnchorDragHandler(ctx.link().clone()).into_callbacks(),
         }
     }
 
@@ -44,24 +36,6 @@ impl Component for Anchor {
             AnchorMsg::Down(x, y) => {
                 self.last_x = x;
                 self.last_y = y;
-                let window = window();
-
-                let scope = ctx.link().clone();
-                self.on_move = Some(EventListener::new(&window, "mousemove", move |event: &Event| {
-                    let event: &MouseEvent = event.dyn_ref().unwrap();
-                    scope.send_message(AnchorMsg::Move(event.client_x(), event.client_y()));
-                    if event.buttons() == 0 {
-                        scope.send_message(AnchorMsg::Up);
-                    }
-                }));
-
-                let scope = ctx.link().clone();
-                self.on_up = Some(EventListener::new(&window, "mouseup", move |event: &Event| {
-                    let event: &MouseEvent = event.dyn_ref().unwrap();
-                    scope.send_message(AnchorMsg::Move(event.client_x(), event.client_y()));
-                    scope.send_message(AnchorMsg::Up);
-                }));
-
                 if let Some(callback) = ctx.props().on_begin.as_ref() {
                     callback.emit(());
                 }
@@ -77,8 +51,6 @@ impl Component for Anchor {
 
             },
             AnchorMsg::Up => {
-                self.on_move = None;
-                self.on_up = None;
                 if let Some(callback) = ctx.props().on_end.as_ref() {
                     callback.emit(());
                 }
@@ -89,7 +61,26 @@ impl Component for Anchor {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         return html!{
-            <div class={ctx.props().class.clone()} onmousedown={self.on_down.clone()}/>
+            <div
+                class={ctx.props().class.clone()}
+                onmousedown={self.drag_callbacks.mouse.clone()}
+                ontouchstart={self.drag_callbacks.touch.clone()}
+            />
         };
+    }
+}
+
+struct AnchorDragHandler(pub Scope<Anchor>);
+impl DragHandler for AnchorDragHandler {
+    fn on_down(&mut self, event: &UnifiedPointerEvent) {
+        self.0.send_message(AnchorMsg::Down(event.client_x(), event.client_y()));
+    }
+
+    fn on_move(&mut self, event: &UnifiedPointerEvent) {
+        self.0.send_message(AnchorMsg::Move(event.client_x(), event.client_y()));
+    }
+
+    fn on_up(&mut self, _event: &UnifiedPointerEvent) {
+        self.0.send_message(AnchorMsg::Up);
     }
 }
