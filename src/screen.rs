@@ -315,4 +315,20 @@ impl Screen {
             </div>
         };
     }
+
+    fn view_dock_selector(&self) -> Html {
+        return html!{
+            <div class="waw-dock-selector">
+                <div>
+                    <div/>
+                    <div/>
+                    <div/>
+                    <div/>
+                    <div>
+                        <div/>
+                    </div>
+                </div>
+            </div>
+        };
+    }
 }

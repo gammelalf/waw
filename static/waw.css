@@ -86,6 +86,59 @@
     height: 1em;
 }
 
+.waw-dock-selector {
+    --border: black;
+    --normal: green;
+    --hovered: red;
+    --radius: 2.5em;
+    z-index: 999;
+    position: fixed;
+    top: 50vh;
+    left: 50vw;
+    width: calc(2 * var(--radius));
+    height: calc(2 * var(--radius));
+    background-color: var(--border);
+    border: calc(var(--radius) * 10 / 100) solid var(--border);
+    clip-path: circle(calc(var(--radius) * (1 + 10 / 100)));
+}
+.waw-dock-selector * {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
+.waw-dock-selector > div {
+    clip-path: circle(50%);
+}
+.waw-dock-selector > div > div:nth-child(1) {
+    clip-path: polygon(5% 0%, 50% 47%, 95% 0%);
+}
+.waw-dock-selector > div > div:nth-child(2) {
+    clip-path: polygon(0% 5%, 47% 50%, 0% 95%);
+}
+.waw-dock-selector > div > div:nth-child(3) {
+    clip-path: polygon(5% 100%, 50% 53%, 95% 100%);
+}
+.waw-dock-selector > div > div:nth-child(4) {
+    clip-path: polygon(100% 5%, 53% 50%, 100% 95%);
+}
+.waw-dock-selector > div > div:nth-child(5) {
+    clip-path: circle(27.5%);
+    background-color: var(--border);
+}
+.waw-dock-selector > div > div:nth-child(5) > div {
+    clip-path: circle(22.5%);
+}
+.waw-dock-selector > div > div:not(:last-child),
+.waw-dock-selector > div > div:last-child > div {
+    background-color: var(--normal);
+}
+.waw-dock-selector > div > div:not(:last-child):hover,
+.waw-dock-selector > div > div:last-child > div:hover {
+    background-color: var(--hovered);
+}
+
 /* Old code for floating windows
 .waw-window {
     /* overwritten by inline css
