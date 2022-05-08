@@ -1,6 +1,7 @@
 use std::cmp::max;
-use gloo::events::EventListener;
+use serde::Deserialize;
 use web_sys::HtmlElement;
+use gloo::events::EventListener;
 use yew::prelude::*;
 
 use crate::promise::PendingPromise;
@@ -22,7 +23,7 @@ pub struct Screen {
     pub windows: Vec<Window>,
 
     pub dock_sizes: [i32; 4],
-    pub center_dock: Option<usize>,
+    pub dock_windows: [Vec<usize>; 5],
 
     // Event handler which is assigned to dragenter and dragover
     // to make something a target for dragged windows
@@ -33,12 +34,12 @@ pub enum ScreenMsg {
     NewWindow(PendingPromise, WindowInit),
     MoveWindow(usize, DockPosition),
     ToggleWindow(usize),
-    CenterWindow(usize),
     ResizeDock(DockPosition, i32, i32),
 }
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum DockPosition {
-    Top, Left, Bottom, Right
+    Top, Left, Bottom, Right, Center
 }
 impl DockPosition {
     #[inline]
@@ -68,7 +69,7 @@ impl Component for Screen {
             windows: Vec::new(),
 
             dock_sizes: [height as i32 / 10, width as i32 / 10, height as i32 / 5, width as i32 / 5],
-            center_dock: None,
+            dock_windows: Default::default(),
 
             make_drop_target: Callback::from(|event: DragEvent| {
                 if let Some(dt) = event.data_transfer() {
@@ -91,56 +92,43 @@ impl Component for Screen {
             }
             NewWindow(promise, init) => {
                 let id = self.windows.len();
-                let request_center = init.request_center.unwrap_or(false);
                 let mut window: Window = init.into();
-                if self.center_dock.is_none() && request_center {
-                    self.center_dock = Some(id);
-                    window.active = true;
-                }
+
                 promise.resolve(window.div.clone());
+
                 self.windows.push(window);
                 true
             }
             MoveWindow(id, dock) => {
                 if let Some(window) = self.windows.get_mut(id) {
-                    if window.center_only() {
-                        return false;
+                    // Remove moved window from its current dock
+                    if let Some(current_dock) = window.current_dock {
+                        window.last_dock = current_dock;
+                        find_and_delete(&mut self.dock_windows[current_dock as usize], &id);
                     }
-                    window.dock = Some(dock);
-                    window.active = true;
-                    if self.center_dock == Some(id) {
-                        self.center_dock = None;
-                    }
+
+                    // Add to new dock and ensure active
+                    window.current_dock = Some(dock);
+                    self.dock_windows[dock as usize].push(id);
                     true
                 } else { false }
             }
             ToggleWindow(id) => {
                 if let Some(window) = self.windows.get_mut(id) {
-                    if window.center_only() {
-                        if !window.active {
-                            self.center_dock = Some(id);
-                        }
+                    // Hide
+                    if let Some(current_dock) = window.current_dock {
+                        window.current_dock = None;
+                        window.last_dock = current_dock;
+                        find_and_delete(&mut self.dock_windows[current_dock as usize], &id);
                     }
-                    window.active = !window.active;
+
+                    // Show
+                    else {
+                        window.current_dock = Some(window.last_dock);
+                        self.dock_windows[window.last_dock as usize].push(id);
+                    }
                     true
                 } else { false }
-            }
-            CenterWindow(id) => {
-                // Remove and close old centered window
-                if let Some(old) = self.center_dock {
-                    if let Some(old) = self.windows.get_mut(old) {
-                        old.active = false;
-                    }
-                    self.center_dock = None;
-                }
-
-                // Set and open new centered window
-                if let Some(new) = self.windows.get_mut(id) {
-                    new.active = true;
-                    self.center_dock = Some(id);
-                }
-
-                true
             }
             ResizeDock(dock, dx, dy) => {
                 use DockPosition::*;
@@ -149,6 +137,7 @@ impl Component for Screen {
                     Left   =>  dx,
                     Bottom => -dy,
                     Right  => -dx,
+                    Center => return false,
                 };
                 self.dock_sizes[dock as usize] = max(0, self.dock_sizes[dock as usize] + d);
                 true
@@ -166,11 +155,10 @@ impl Component for Screen {
                 }
                 html
             });
-        let center_dock = self.center_dock.map(|id| {
-            let window = self.windows.get(id)?;
-            if window.active {Some(self.view_window(ctx, id, window))}
-            else {None}
-        }).flatten();
+        let center_dock = self.dock_windows[DockPosition::Center as usize]
+            .last()
+            .map(|&id| (id, &self.windows[id]))
+            .map(|(id, window)| self.view_window(ctx, id, window));
 
         let [top, left, bottom, right] = docks;
         return html!{
@@ -195,7 +183,7 @@ impl Component for Screen {
                             let id = dt.get_data("application/waw").ok()?;
                             let id: usize = id.parse().ok()?;
                             event.prevent_default();
-                            Some(ScreenMsg::CenterWindow(id))
+                            Some(ScreenMsg::MoveWindow(id, DockPosition::Center))
                         })}
                     >
                         if let Some(center) = center_dock {
@@ -219,26 +207,19 @@ impl Screen {
             Left   => "waw-left-dock",
             Bottom => "waw-bottom-dock",
             Right  => "waw-right-dock",
+            Center => unreachable!(),
         };
         let anchor_class = match dock {
             Top    => "waw-s",
             Left   => "waw-e",
             Bottom => "waw-n",
             Right  => "waw-w",
+            Center => unreachable!(),
         };
 
-        let windows: Vec<Html> = self.windows
+        let windows: Vec<Html> = self.dock_windows[dock as usize]
             .iter()
-            .enumerate()
-            .filter(|(_, window)|
-                window.dock == Some(dock)
-            )
-            .filter(|(_, window)|
-                window.active
-            )
-            .filter(|(id, _)|
-                Some(*id) != self.center_dock
-            )
+            .map(|&id| (id, &self.windows[id]))
             .map(|(id, window)| html!{
                 <key={id}>
                     {self.view_window(ctx, id, window)}
@@ -277,7 +258,7 @@ impl Screen {
     }
 
     fn view_window_icon(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {
-        if window.center_only() {
+        /*if window.center_only() {
             return html!{
                 <img
                     src={window.icon.clone()}
@@ -288,7 +269,7 @@ impl Screen {
                     })}
                 />
             };
-        } else {
+        } else {*/
             return html!{
                 <img
                     src={window.icon.clone()}
@@ -304,7 +285,7 @@ impl Screen {
                     })}
                 />
             };
-        }
+        //}
     }
 
     fn view_window(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {
@@ -330,5 +311,16 @@ impl Screen {
                 </div>
             </div>
         };
+    }
+}
+
+fn find_and_delete<T: PartialEq>(vec: &mut Vec<T>, t : &T) {
+    let indexes: Vec<usize> = vec.iter()
+        .enumerate()
+        .filter(|(_, it)| *it == t)
+        .map(|(index, _)| index)
+        .collect();
+    for index in indexes.into_iter().rev() {
+        vec.remove(index);
     }
 }
