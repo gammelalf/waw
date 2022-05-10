@@ -41,7 +41,7 @@ Register a window
 const windowId = await screen.newWindow({title: "Some Window", dock: "left"});
 ```
 
-See `example/index.html` for more.
+See `example/index.html` or [pnp-zone](https://github.com/pnp-zone/docs/blob/main/docs/dev/plugins/waw.md) for more.
 
 ## Styling
 
