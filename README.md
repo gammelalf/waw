@@ -19,7 +19,7 @@ Attach the required css file
 <link rel="stylesheet" href="/static/waw.css">
 ```
 
-Import the javascript gloo module
+Import the javascript glue module
 ```javascript
 import init, {Screen} from "/pkg/waw.js"; // Static (Inside another module)
 
