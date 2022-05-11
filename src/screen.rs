@@ -24,6 +24,7 @@ pub struct Screen {
 
     pub dock_sizes: [i32; 4],
     pub dock_windows: [Vec<usize>; 5],
+    pub dock_selector: Option<(usize, i32, i32)>,
 
     // Event handler which is assigned to dragenter and dragover
     // to make something a target for dragged windows
@@ -33,6 +34,7 @@ pub enum ScreenMsg {
     Resize,
     NewWindow(PendingPromise, WindowInit),
     MoveWindow(usize, DockPosition),
+    OpenSelector(usize, i32, i32),
     ToggleWindow(usize),
     ResizeDock(DockPosition, i32, i32),
 }
@@ -70,6 +72,7 @@ impl Component for Screen {
 
             dock_sizes: [height as i32 / 10, width as i32 / 10, height as i32 / 5, width as i32 / 5],
             dock_windows: Default::default(),
+            dock_selector: None,
 
             make_drop_target: Callback::from(|event: DragEvent| {
                 if let Some(dt) = event.data_transfer() {
@@ -91,8 +94,7 @@ impl Component for Screen {
                 true
             }
             NewWindow(promise, init) => {
-                let id = self.windows.len();
-                let mut window: Window = init.into();
+                let window: Window = init.into();
 
                 promise.resolve(window.div.clone());
 
@@ -100,6 +102,7 @@ impl Component for Screen {
                 true
             }
             MoveWindow(id, dock) => {
+                self.dock_selector = None;
                 if let Some(window) = self.windows.get_mut(id) {
                     // Remove moved window from its current dock
                     if let Some(current_dock) = window.current_dock {
@@ -142,6 +145,10 @@ impl Component for Screen {
                 self.dock_sizes[dock as usize] = max(0, self.dock_sizes[dock as usize] + d);
                 true
             }
+            OpenSelector(id, x, y) => {
+                self.dock_selector = Some((id, x, y));
+                true
+            }
         }
     }
 
@@ -163,6 +170,9 @@ impl Component for Screen {
         let [top, left, bottom, right] = docks;
         return html!{
             <div class="waw-screen">
+                if let Some(selector) = self.view_dock_selector(ctx){
+                    {selector}
+                }
                 <div class="waw-taskbar">
                     {for self.windows
                         .iter()
@@ -280,8 +290,11 @@ impl Screen {
                             dt.set_data("application/waw", &id.to_string()).unwrap();
                         }
                     })}
-                    onclick={ctx.link().callback(move |_: MouseEvent| {
+                    /*onclick={ctx.link().callback(move |_: MouseEvent| {
                         ScreenMsg::ToggleWindow(id)
+                    })}*/
+                    onclick={ctx.link().callback(move |event: MouseEvent| {
+                        ScreenMsg::OpenSelector(id, event.client_x(), event.client_y())
                     })}
                 />
             };
@@ -297,20 +310,25 @@ impl Screen {
         };
     }
 
-    fn view_dock_selector(&self) -> Html {
-        return html!{
-            <div class="waw-dock-selector">
-                <div>
-                    <div/>
-                    <div/>
-                    <div/>
-                    <div/>
-                    <div>
-                        <div/>
-                    </div>
+    fn view_dock_selector(&self, ctx: &Context<Self>) -> Option<Html> {
+        self.dock_selector.map(|(id, x, y)| {
+            let on_click = move |dock| {
+                ctx.link().callback(move |_: MouseEvent|
+                    ScreenMsg::MoveWindow(id, dock)
+                )
+            };
+            return html!{
+                <div class="waw-dock-selector" style={
+                    format!("--x: {}px; --y: {}px", x, y)
+                }>
+                    <div onclick={on_click(DockPosition::Top)}/>
+                    <div onclick={on_click(DockPosition::Left)}/>
+                    <div onclick={on_click(DockPosition::Bottom)}/>
+                    <div onclick={on_click(DockPosition::Right)}/>
+                    <div onclick={on_click(DockPosition::Center)}/>
                 </div>
-            </div>
-        };
+            };
+        })
     }
 }
 
