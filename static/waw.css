@@ -8,13 +8,16 @@
     flex-direction: column;
 }
 
-.waw-taskbar {
-    display: flex;
-    align-items: stretch;
-    flex-direction: row;
-    flex-wrap: wrap;
+.waw-modal-background {
+    position: fixed;
+    z-index: 999;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 100vw;
 }
 
+/* Docks */
 .waw-docks {
     /* overwritten by inline css */
     --top: 0;
@@ -60,6 +63,7 @@
     flex-direction: row;
 }
 
+/* Docks' Dropzone */
 .waw-drop-zone {
     --delta: -3em;
     position: absolute;
@@ -76,8 +80,47 @@
 .waw-window {
     position: relative;
 }
+
+/* Taskbar */
+.waw-taskbar {
+    display: flex;
+    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+.waw-taskbar > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.waw-taskbar > div > div:nth-child(1) {
+    margin: 0.2em;
+    border-radius: 0.2em;
+    border: 0.2em solid transparent;
+}
+.waw-taskbar > div > div.waw-open-indicator:nth-child(1) {
+   border-color: white;
+}
+.waw-taskbar > div > img:nth-child(2) {
+    width: 4em;
+    height: 4em;
+}
+.waw-taskbar > div > div:nth-child(3) {
+    margin: 0.3em;
+    border: 0.2em solid white;
+    border-left-width: 1em;
+    border-right-width: 1em;
+    border-radius: 0.1em;
+}
+.waw-taskbar > div > div:nth-child(4) {
+    position: relative;
+    z-index: 1;
+    width: 0;
+    height: 0;
+}
+
 /* Icon used to drag windows */
-.waw-window > img:first-child {
+.waw-window > img.waw-window-icon {
     z-index: 1;
     position: absolute;
     top: 0;
@@ -86,6 +129,7 @@
     height: 1em;
 }
 
+/* Dock Selector */
 .waw-dock-selector {
     --width: 5em;
     --height: 5em;
@@ -98,12 +142,13 @@
     z-index: 999;
     position: fixed;
     left: clamp(0vw, calc(var(--x) - var(--width) / 2), calc(100vw - var(--width)));
-    top: clamp(0vh, calc(var(--y) - var(--height) / 2), calc(100vh - var(--height)));
+    top: calc(var(--y) + 1em);
     width: var(--width);
     height: var(--height);
 }
 .waw-dock-selector > div {
     background-repeat: no-repeat;
+    background-position: center;
     border-radius: 10%;
 }
 .waw-dock-selector > div:nth-child(1) {

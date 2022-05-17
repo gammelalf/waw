@@ -1,5 +1,6 @@
 use std::cmp::max;
 use serde::Deserialize;
+use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 use gloo::events::EventListener;
 use yew::prelude::*;
@@ -35,6 +36,7 @@ pub enum ScreenMsg {
     NewWindow(PendingPromise, WindowInit),
     MoveWindow(usize, DockPosition),
     OpenSelector(usize, i32, i32),
+    CloseSelector(Option<DockPosition>),
     ToggleWindow(usize),
     ResizeDock(DockPosition, i32, i32),
 }
@@ -149,6 +151,15 @@ impl Component for Screen {
                 self.dock_selector = Some((id, x, y));
                 true
             }
+            CloseSelector(dock) => {
+                if let Some((_id, _, _)) = self.dock_selector.take() {
+                    if let Some(_dock) = dock {
+                        // currently closing the dock with a new dock is handled via MoveWindow
+                        panic!("Not Implemented");
+                    }
+                    true
+                } else { false }
+            }
         }
     }
 
@@ -170,16 +181,7 @@ impl Component for Screen {
         let [top, left, bottom, right] = docks;
         return html!{
             <div class="waw-screen">
-                if let Some(selector) = self.view_dock_selector(ctx){
-                    {selector}
-                }
-                <div class="waw-taskbar">
-                    {for self.windows
-                        .iter()
-                        .enumerate()
-                        .map(|(id, window)| self.view_window_icon(ctx, id, window))
-                    }
-                </div>
+                {self.view_taskbar(ctx)}
                 <div class="waw-docks" style={
                     format!("--top: {}px; --left: {}px; --bottom: {}px; --right: {}px;",
                     dock_sizes[0], dock_sizes[1], dock_sizes[2], dock_sizes[3])
@@ -210,6 +212,68 @@ impl Component for Screen {
     }
 }
 impl Screen {
+    fn view_taskbar(&self, ctx: &Context<Self>) -> Html {
+        let windows = self.windows.iter()
+            .enumerate()
+            .map(|(id, window)| {
+                let open = window.current_dock.is_some();
+                let menu_open = matches!(self.dock_selector, Some((s_id, _, _)) if s_id == id);
+                return html!{
+                    <div>
+                        if open {
+                            <div class="waw-open-indicator"/>
+                        } else {
+                            <div/>
+                        }
+                        <img
+                            src={window.icon.clone()}
+                            alt={window.title.clone()}
+                            draggable="true"
+                            ondragstart={Callback::from(move |event: DragEvent| {
+                                if let Some(dt) = event.data_transfer() {
+                                    dt.set_data("application/waw", &id.to_string()).unwrap();
+                                }
+                            })}
+                            onclick={ctx.link().callback(move |_: MouseEvent| {
+                                ScreenMsg::ToggleWindow(id)
+                            })}
+                        />
+                        if !menu_open {
+                            <div
+                                onclick={ctx.link().callback(move |event: MouseEvent| {
+                                    let target: HtmlElement = event.target()
+                                        .expect("It's a div, see two lines above")
+                                        .dyn_into()
+                                        .expect("It's a div, see two lines above");
+                                    let rect = target.get_bounding_client_rect();
+                                    let x = rect.x() + rect.width() / 2.0;
+                                    let y = rect.y() + rect.height() / 2.0;
+                                    ScreenMsg::OpenSelector(id, x.floor() as i32, y.floor() as i32)
+                                })}
+                            />
+                        } else {
+                            <div
+                                onclick={ctx.link().callback(move |_: MouseEvent| {
+                                    ScreenMsg::CloseSelector(None)
+                                })}
+                            />
+                        }
+                        if menu_open {
+                            <div>
+                                {self.view_dock_selector(ctx).unwrap()}
+                            </div>
+                        }
+                    </div>
+                };
+            });
+
+        return html!{
+            <div class="waw-taskbar">
+                {for windows}
+            </div>
+        };
+    }
+
     fn view_dock(&self, ctx: &Context<Self>, dock: DockPosition) -> (bool, Html) {
         use DockPosition::*;
         let dock_class = match dock {
@@ -267,10 +331,11 @@ impl Screen {
         });
     }
 
-    fn view_window_icon(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {
-        /*if window.center_only() {
-            return html!{
+    fn view_window(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {
+        return html!{
+            <div class="waw-window">
                 <img
+                    class="waw-window-icon"
                     src={window.icon.clone()}
                     alt={window.title.clone()}
                     draggable="false"
@@ -278,33 +343,6 @@ impl Screen {
                         ScreenMsg::ToggleWindow(id)
                     })}
                 />
-            };
-        } else {*/
-            return html!{
-                <img
-                    src={window.icon.clone()}
-                    alt={window.title.clone()}
-                    draggable="true"
-                    ondragstart={Callback::from(move |event: DragEvent| {
-                        if let Some(dt) = event.data_transfer() {
-                            dt.set_data("application/waw", &id.to_string()).unwrap();
-                        }
-                    })}
-                    /*onclick={ctx.link().callback(move |_: MouseEvent| {
-                        ScreenMsg::ToggleWindow(id)
-                    })}*/
-                    onclick={ctx.link().callback(move |event: MouseEvent| {
-                        ScreenMsg::OpenSelector(id, event.client_x(), event.client_y())
-                    })}
-                />
-            };
-        //}
-    }
-
-    fn view_window(&self, ctx: &Context<Self>, id: usize, window: &Window) -> Html {
-        return html!{
-            <div class="waw-window">
-                {self.view_window_icon(ctx, id, window)}
                 {Html::VRef(window.div.clone().into())}
             </div>
         };
@@ -318,14 +356,18 @@ impl Screen {
                 )
             };
             return html!{
-                <div class="waw-dock-selector" style={
-                    format!("--x: {}px; --y: {}px", x, y)
-                }>
-                    <div onclick={on_click(DockPosition::Top)}/>
-                    <div onclick={on_click(DockPosition::Left)}/>
-                    <div onclick={on_click(DockPosition::Bottom)}/>
-                    <div onclick={on_click(DockPosition::Right)}/>
-                    <div onclick={on_click(DockPosition::Center)}/>
+                <div class="waw-modal-background" onclick={ctx.link().callback(|_: MouseEvent| {
+                    ScreenMsg::CloseSelector(None)
+                })}>
+                    <div class="waw-dock-selector" style={
+                        format!("--x: {}px; --y: {}px", x, y)
+                    }>
+                        <div onclick={on_click(DockPosition::Top)}/>
+                        <div onclick={on_click(DockPosition::Left)}/>
+                        <div onclick={on_click(DockPosition::Bottom)}/>
+                        <div onclick={on_click(DockPosition::Right)}/>
+                        <div onclick={on_click(DockPosition::Center)}/>
+                    </div>
                 </div>
             };
         })
