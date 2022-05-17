@@ -1,3 +1,13 @@
+/* Global color palette */
+.waw-screen {
+    --background: white;
+    --foreground: lightblue;
+    --text: black;
+    --hovered: teal;
+    --drop-zone: rgba(255, 255, 255, 0.1);
+    --dock-shadow: rgba(0, 0, 0, 0.2);
+}
+
 .waw-screen {
     position: absolute;
     top: 0;
@@ -17,7 +27,7 @@
     width: 100vw;
 }
 
-/* Docks */
+/* Dock's Grid */
 .waw-docks {
     /* overwritten by inline css */
     --top: 0;
@@ -41,10 +51,17 @@
 .waw-center-dock { grid-column: 2 / 3; }
 .waw-right-dock  { grid-column: 3 / 4; }
 
+/* Dock's Color */
 .waw-docks > * {
     position: relative;
+    background-color: var(--background);
 }
+.waw-top-dock    { box-shadow: 0 0 10px min(5px, var(--top))    var(--dock-shadow); }
+.waw-left-dock   { box-shadow: 0 0 10px min(5px, var(--left))   var(--dock-shadow); }
+.waw-bottom-dock { box-shadow: 0 0 10px min(5px, var(--bottom)) var(--dock-shadow); }
+.waw-right-dock  { box-shadow: 0 0 10px min(5px, var(--right))  var(--dock-shadow); }
 
+/* Dock's children */
 .waw-docks .waw-container {
     position: absolute;
     top: 0;
@@ -76,6 +93,9 @@
 .waw-left-dock > .waw-drop-zone { right: var(--delta); }
 .waw-bottom-dock > .waw-drop-zone { top: var(--delta); }
 .waw-right-dock > .waw-drop-zone { left: var(--delta); }
+.waw-drop-zone.waw-active {
+    background-color: var(--drop-zone);
+}
 
 .waw-window {
     position: relative;
@@ -87,6 +107,7 @@
     align-items: stretch;
     flex-direction: row;
     flex-wrap: wrap;
+    background-color: var(--foreground);
 }
 .waw-taskbar > div {
     display: flex;
@@ -99,7 +120,7 @@
     border: 0.2em solid transparent;
 }
 .waw-taskbar > div > div.waw-open-indicator:nth-child(1) {
-   border-color: white;
+   border-color: var(--text);
 }
 .waw-taskbar > div > img:nth-child(2) {
     width: 4em;
@@ -107,7 +128,7 @@
 }
 .waw-taskbar > div > div:nth-child(3) {
     margin: 0.3em;
-    border: 0.2em solid white;
+    border: 0.2em solid var(--text);
     border-left-width: 1em;
     border-right-width: 1em;
     border-radius: 0.1em;
@@ -131,9 +152,7 @@
 
 /* Dock Selector */
 .waw-dock-selector {
-    --width: 5em;
-    --height: 5em;
-    --hovered: red;
+    --size: 5em;
 
     /* overwritten by inline css */
     --x: 0px;
@@ -141,10 +160,12 @@
     display: grid;
     z-index: 999;
     position: fixed;
-    left: clamp(0vw, calc(var(--x) - var(--width) / 2), calc(100vw - var(--width)));
+    left: clamp(0vw, calc(var(--x) - var(--size) / 2), calc(100vw - var(--size)));
     top: calc(var(--y) + 1em);
-    width: var(--width);
-    height: var(--height);
+    width: var(--size);
+    height: var(--size);
+    border-radius: calc(var(--size) / 4);
+    background-color: var(--foreground);
 }
 .waw-dock-selector > div {
     background-repeat: no-repeat;

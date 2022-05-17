@@ -1,22 +1,10 @@
-:root {
-    --text-color: #ffffff;
-    --background-color: #15202b;
-    --highlighted-background-color: #233549;
-    --border-color: #422d78;
-    --highlighted-border-color: #5e42a6;
-    --modal-color: #192734;
+.waw-screen {
+    --text: #ffffff;
+    --background: #15202b;
+    --foreground: #233549;
+    --hovered: #5e42a6;
 }
 
 .waw-taskbar img {
     filter: invert();
-}
-.waw-docks > * {
-    background-color: var(--background-color);
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
-}
-.waw-taskbar {
-    background-color: var(--highlighted-background-color);
-}
-.waw-drop-zone.waw-active {
-    background-color: rgba(255, 255, 255, 0.1);
 }
